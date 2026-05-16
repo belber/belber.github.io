@@ -120,6 +120,8 @@
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn btn-primary" id="publish-btn" onclick="publish()">发布</button>
+      <button class="btn btn-outline btn-sm" id="upload-btn" onclick="document.getElementById('file-input').click()">上传图片</button>
+      <input type="file" id="file-input" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none">
       <button class="btn btn-outline btn-sm" id="cancel-edit-btn" onclick="cancelEdit()" style="display:none">取消编辑</button>
     </div>
     <div id="status" class="status"></div>
@@ -481,6 +483,76 @@ function publish() {
     });
   }
 }
+// === 图片上传 ===
+document.getElementById('file-input').addEventListener('change', function(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  var btn = document.getElementById('upload-btn');
+  btn.disabled = true;
+  btn.textContent = '上传中...';
+
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    var img = new Image();
+    img.onload = function() {
+      // Canvas 压缩
+      var canvas = document.createElement('canvas');
+      var MAX = 1920;
+      var w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = h * MAX / w; w = MAX; }
+        else { w = w * MAX / h; h = MAX; }
+      }
+      canvas.width = w;
+      canvas.height = h;
+      var ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      var quality = 0.85;
+      var dataUrl = canvas.toDataURL('image/jpeg', quality);
+
+      // 生成文件名: YYYY-MM-DD_hhmmss_xxx.jpg
+      var now = new Date();
+      var pad = function(n) { return String(n).padStart(2, '0'); };
+      var ds = now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate()) +
+               '_' + pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds());
+      var rand = '';
+      var chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+      for (var i = 0; i < 3; i++) rand += chars.charAt(Math.floor(Math.random() * chars.length));
+      var filename = 'assets/images/' + ds + '_' + rand + '.jpg';
+
+      // 上传到 GitHub
+      fetch('https://api.github.com/repos/' + REPO + '/contents/' + filename, {
+        method: 'PUT',
+        headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' },
+        body: JSON.stringify({
+          message: 'upload: ' + filename,
+          content: dataUrl.split(',')[1],
+          branch: BRANCH
+        })
+      })
+      .then(function(r) {
+        if (!r.ok) throw new Error('上传失败 (' + r.status + ')');
+        return r.json();
+      })
+      .then(function() {
+        var md = '![](' + '/assets/images/' + filename.split('/').pop() + ')\n';
+        var textarea = document.getElementById('post-body');
+        textarea.value = textarea.value + '\n' + md;
+        btn.textContent = '✓ 已上传';
+        setTimeout(function() { btn.disabled = false; btn.textContent = '上传图片'; }, 2000);
+      })
+      .catch(function(err) {
+        alert('上传失败：' + err.message);
+        btn.disabled = false;
+        btn.textContent = '上传图片';
+      });
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+  // 重置 input 以便再次选择同一文件
+  e.target.value = '';
+});
 </script>
 </body>
 </html>
