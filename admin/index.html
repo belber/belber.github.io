@@ -76,6 +76,15 @@
     .admin-month-label { font-size: 13px; font-weight: 600; color: #2b2b2b; }
     .admin-month-count { font-size: 11px; color: #999; font-weight: 400; }
     .admin-month-posts { padding: 0 0 4px 0; display: flex; flex-direction: column; gap: 3px; }
+    .image-browser { border-top: 1px solid #e8e0f0; padding-top: 12px; }
+    .image-browser-header { display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; padding: 6px 0; }
+    .image-browser-header:hover { color: #a594dd; }
+    .image-browser-icon { font-size: 10px; color: #a594dd; width: 14px; text-align: center; }
+    .image-browser-label { font-size: 13px; font-weight: 500; color: #666; }
+    .image-browser-content { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 0 4px; }
+    .image-browser-item { width: 64px; height: 64px; border-radius: 6px; overflow: hidden; cursor: pointer; border: 1px solid #e8e0f0; transition: border-color 0.15s, box-shadow 0.15s; }
+    .image-browser-item:hover { border-color: #a594dd; box-shadow: 0 0 0 2px rgba(165,148,221,0.2); }
+    .image-browser-item img { width: 100%; height: 100%; object-fit: cover; }
   </style>
 </head>
 <body>
@@ -125,6 +134,16 @@
       <button class="btn btn-outline btn-sm" id="cancel-edit-btn" onclick="cancelEdit()" style="display:none">取消编辑</button>
     </div>
     <div id="status" class="status"></div>
+    <!-- 已上传图片浏览 -->
+    <div id="image-browser" class="image-browser" style="display:none;margin-top:20px">
+      <div class="image-browser-header" onclick="toggleImageBrowser()">
+        <span class="image-browser-icon">▶</span>
+        <span class="image-browser-label">已上传图片</span>
+      </div>
+      <div id="image-browser-content" class="image-browser-content" style="display:none">
+        <div class="empty-state" style="padding:20px">加载中...</div>
+      </div>
+    </div>
   </div>
 
   <!-- 文章管理 -->
@@ -221,6 +240,7 @@ function showStatus(msg, type) {
 // === 视图切换 ===
 function showPosts() {
   document.getElementById('editor-view').style.display = 'none';
+  document.getElementById('image-browser').style.display = 'none';
   document.getElementById('posts-view').style.display = 'block';
   loadPosts();
 }
@@ -235,6 +255,7 @@ function showEditor() {
   document.getElementById('status').className = 'status';
   document.getElementById('status').style.display = 'none';
   document.getElementById('posts-view').style.display = 'none';
+  document.getElementById('image-browser').style.display = '';
   document.getElementById('editor-view').style.display = 'block';
 }
 
@@ -560,6 +581,56 @@ document.getElementById('file-input').addEventListener('change', function(e) {
   // 重置 input 以便再次选择同一文件
   e.target.value = '';
 });
+// === 已上传图片浏览 ===
+function toggleImageBrowser() {
+  var content = document.getElementById('image-browser-content');
+  var icon = document.querySelector('.image-browser-icon');
+  if (content.style.display === 'none') {
+    content.style.display = '';
+    icon.textContent = '▼';
+    loadImageBrowser();
+  } else {
+    content.style.display = 'none';
+    icon.textContent = '▶';
+  }
+}
+
+function loadImageBrowser() {
+  var container = document.getElementById('image-browser-content');
+  fetch('https://api.github.com/repos/' + REPO + '/contents/assets/images', {
+    headers: { 'Authorization': 'Bearer ' + accessToken, 'Accept': 'application/vnd.github.v3+json' }
+  })
+  .then(function(r) {
+    if (r.status === 404) { container.innerHTML = '<div class="empty-state" style="padding:20px">还没有上传过图片</div>'; return null; }
+    if (!r.ok) throw new Error('加载失败');
+    return r.json();
+  })
+  .then(function(files) {
+    if (!files || !files.length) {
+      container.innerHTML = '<div class="empty-state" style="padding:20px">还没有上传过图片</div>';
+      return;
+    }
+    // 按文件名倒序（最新的在前），取最近 50 张
+    files.sort(function(a, b) { return b.name.localeCompare(a.name); });
+    var html = '';
+    files.slice(0, 50).forEach(function(f) {
+      if (f.type !== 'file') return;
+      html += '<div class="image-browser-item" title="' + f.name + '" onclick="insertImage(\'' + f.name + '\')">';
+      html += '  <img src="https://raw.githubusercontent.com/' + REPO + '/main/assets/images/' + f.name + '" alt="' + f.name + '" loading="lazy">';
+      html += '</div>';
+    });
+    container.innerHTML = html;
+  })
+  .catch(function() {
+    container.innerHTML = '<div class="empty-state" style="padding:20px;color:#e57373">加载失败</div>';
+  });
+}
+
+function insertImage(filename) {
+  var md = '![](' + '/assets/images/' + filename + ')\n';
+  var textarea = document.getElementById('post-body');
+  textarea.value = textarea.value + '\n' + md;
+}
 </script>
 </body>
 </html>
