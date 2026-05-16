@@ -6,7 +6,9 @@
 
 **架构：** 基于 Jekyll + GitHub Pages。首页（index.html）渲染为分栏布局，左栏显示按日期分组的文章列表，右栏通过 JS Fetch 加载独立文章页面内容并展示。每篇文章保持独立 URL。
 
-**技术栈：** Jekyll 3.10.0、原生 JavaScript、SCSS/CSS、GitHub Pages
+**技术栈：** Jekyll 3.10.0（部署）/ 4.4.1（本地开发）、原生 JavaScript、SCSS/CSS、GitHub Pages
+
+> **实际实施注：** Ruby 4.0 下使用 `jekyll ~> 4.3` 替代 `github-pages` gem 做本地开发。部署时 GitHub Pages 使用其内置的 Jekyll 3.10。Sass 需用 `darken()`/`lighten()`（而非 `color.adjust()`），以兼容 GH Pages 的 Sass 版本。
 
 ---
 
@@ -72,9 +74,15 @@ exclude:
 ```ruby
 source "https://rubygems.org"
 
-gem "github-pages", group: :jekyll_plugins
-gem "jekyll-seo-tag"
+# 注：本地使用 Jekyll 4.x，部署时 GH Pages 会自动使用其内置的 Jekyll 3.10
+gem "jekyll", "~> 4.3"
 gem "jekyll-feed"
+gem "jekyll-seo-tag"
+
+# Ruby 4.0 不再包含以下默认 gem
+gem "csv"
+gem "webrick"
+gem "bigdecimal"
 ```
 
 - [ ] **Step 1.3：创建 `.gitignore`**
