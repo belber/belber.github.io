@@ -3,12 +3,212 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>文章管理 - Belber's Diary</title>
+  <title>发文 - Belber's Diary</title>
+  <link rel="stylesheet" href="/assets/css/main.css">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; }
+    body { background: #fff; }
+    #app { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
+    h1 { font-size: 22px; font-weight: 600; margin-bottom: 24px; color: #2b2b2b; }
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-size: 13px; font-weight: 500; color: #2b2b2b; margin-bottom: 4px; }
+    input, textarea { width: 100%; padding: 10px 12px; border: 1px solid #e0d5c0; border-radius: 8px; font-size: 15px; font-family: inherit; box-sizing: border-box; outline: none; transition: border-color 0.15s; }
+    input:focus, textarea:focus { border-color: #d4a373; }
+    textarea { min-height: 200px; resize: vertical; line-height: 1.7; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 24px; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; transition: opacity 0.15s; }
+    .btn-primary { background: #d4a373; color: #fff; }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-outline { background: transparent; color: #d4a373; border: 1px solid #d4a373; }
+    .btn-outline:hover { background: #faedcd; }
+    .status { margin-top: 12px; font-size: 13px; color: #666; padding: 8px 12px; border-radius: 6px; display: none; }
+    .status.success { display: block; background: #ccd5ae; color: #2b2b2b; }
+    .status.error { display: block; background:#f5d0d0; color:#8b0000; }
+    .status.info { display: block; background:#faedcd; color:#2b2b2b; }
+    .login-prompt { text-align: center; padding: 80px 20px; }
+    .login-prompt h2 { font-size: 18px; font-weight: 400; color: #2b2b2b; margin-bottom: 20px; }
+    .login-prompt .sub { font-size: 14px; color: #999; margin-top: 12px; line-height: 1.6; }
+    .device-code { background: #fefae0; border: 1px solid #e0d5c0; border-radius: 8px; padding: 16px; margin-top: 16px; display: none; }
+    .device-code .code { font-size: 28px; font-weight: 700; letter-spacing: 4px; color: #d4a373; text-align: center; padding: 12px; }
+    .device-code .url { font-size: 14px; text-align: center; }
+    .device-code .url a { color: #d4a373; }
+    .editor-area { display: none; }
+    .back-link { font-size: 13px; color: #999; margin-bottom: 16px; display: block; }
+    .back-link:hover { color: #d4a373; }
   </style>
 </head>
 <body>
-  <script src="https://unpkg.com/decap-cms@^3/dist/decap-cms.js"></script>
+<div id="app">
+  <a class="back-link" href="/">← 返回博客</a>
+
+  <!-- 登录页 -->
+  <div id="login-view" class="login-prompt">
+    <h2>写一篇日记</h2>
+    <button class="btn btn-primary" onclick="startLogin()">登录 GitHub</button>
+    <div class="sub">需要 GitHub 授权才能发布文章</div>
+    <div id="device-code-box" class="device-code">
+      <p style="font-size:13px;margin-bottom:8px;">在浏览器中打开以下链接并输入验证码：</p>
+      <div class="code" id="device-code"></div>
+      <div class="url"><a href="#" id="device-url" target="_blank" onclick="openUrl()">打开验证页面</a></div>
+      <p style="font-size:12px;color:#999;margin-top:10px;">等待授权中...</p>
+    </div>
+  </div>
+
+  <!-- 编辑器 -->
+  <div id="editor-view" class="editor-area">
+    <h1>写文章</h1>
+    <div class="form-group">
+      <label>标题</label>
+      <input type="text" id="post-title" placeholder="今天想写点什么？" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label>正文（支持 Markdown）</label>
+      <textarea id="post-body" placeholder="用 Markdown 写下你的想法..."></textarea>
+    </div>
+    <button class="btn btn-primary" id="publish-btn" onclick="publish()">发布</button>
+    <div id="status" class="status"></div>
+  </div>
+</div>
+
+<script>
+const CLIENT_ID = 'Ov23li8hGMXyMY4f5nBA';
+const REPO = 'belber/belber.github.io';
+const BRANCH = 'main';
+
+let accessToken = null;
+let deviceInterval = null;
+
+// === 登录 ===
+function startLogin() {
+  document.querySelector('.login-prompt h2').textContent = '正在请求授权...';
+  document.querySelector('.login-prompt .btn').style.display = 'none';
+
+  fetch('https://github.com/login/device/code', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    body: JSON.stringify({ client_id: CLIENT_ID, scope: 'repo' })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.error) throw new Error(data.error_description || data.error);
+    document.querySelector('.login-prompt .sub').style.display = 'none';
+    document.getElementById('device-code-box').style.display = 'block';
+    document.getElementById('device-code').textContent = data.user_code;
+    document.getElementById('device-url').href = data.verification_uri;
+    document.getElementById('device-url').textContent = data.verification_uri;
+
+    // 轮询检查授权状态
+    deviceInterval = setInterval(function() {
+      fetch('https://github.com/login/oauth/access_token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          client_id: CLIENT_ID,
+          device_code: data.device_code,
+          grant_type: 'urn:ietf:params:oauth:grant-type:device_code'
+        })
+      })
+      .then(r => r.json())
+      .then(tokenData => {
+        if (tokenData.access_token) {
+          clearInterval(deviceInterval);
+          accessToken = tokenData.access_token;
+          showEditor();
+        } else if (tokenData.error === 'authorization_pending') {
+          // 等待用户授权，继续轮询
+        } else if (tokenData.error === 'slow_down') {
+          // GitHub 要求减慢轮询频率，忽略
+        } else if (tokenData.error === 'expired_token') {
+          clearInterval(deviceInterval);
+          showError('授权已过期，请刷新页面重试');
+        } else if (tokenData.error === 'access_denied') {
+          clearInterval(deviceInterval);
+          showError('授权已取消');
+          location.reload();
+        }
+      }).catch(function() {});
+    }, 5000);
+  })
+  .catch(function(err) {
+    document.querySelector('.login-prompt h2').textContent = '授权失败';
+    showError(err.message || '请求失败，请检查网络');
+  });
+}
+
+function showEditor() {
+  document.getElementById('login-view').style.display = 'none';
+  document.getElementById('editor-view').style.display = 'block';
+}
+
+function showError(msg) {
+  var s = document.getElementById('status');
+  s.textContent = msg;
+  s.className = 'status error';
+}
+
+function showSuccess(msg) {
+  var s = document.getElementById('status');
+  s.textContent = msg;
+  s.className = 'status success';
+}
+
+function showInfo(msg) {
+  var s = document.getElementById('status');
+  s.textContent = msg;
+  s.className = 'status info';
+}
+
+// === 发布 ===
+function publish() {
+  var title = document.getElementById('post-title').value.trim();
+  var body = document.getElementById('post-body').value.trim();
+  if (!title) { showError('请输入标题'); return; }
+  if (!body) { showError('请输入正文'); return; }
+
+  var btn = document.getElementById('publish-btn');
+  btn.disabled = true;
+  btn.textContent = '发布中...';
+  showInfo('正在发布...');
+
+  var now = new Date();
+  var pad = function(n) { return String(n).padStart(2, '0'); };
+  var dateStr = now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate());
+  var timeStr = pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+  var slug = title.toLowerCase().replace(/[^\w一-鿿]+/g, '-').replace(/^-|-$/g, '') || 'post';
+  var filename = '_posts/' + dateStr + '-' + slug + '.md';
+  var tz = '+08:00';
+
+  var frontMatter = '---\nlayout: post\ntitle: "' + title + '"\ndate: ' + dateStr + ' ' + timeStr + ' ' + tz + '\n---\n\n' + body;
+
+  // 使用 Contents API 创建文件（一行搞定）
+  fetch('https://api.github.com/repos/' + REPO + '/contents/' + filename, {
+    method: 'PUT',
+    headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' },
+    body: JSON.stringify({
+      message: 'feat: ' + title,
+      content: btoa(unescape(encodeURIComponent(frontMatter))),
+      branch: BRANCH
+    })
+  })
+  .then(r => r.json())
+  .then(result => {
+    if (result.message) throw new Error(result.message);
+    btn.textContent = '✓ 已发布';
+    showSuccess('文章 "' + title + '" 已发布！博客将在 1-2 分钟后更新。');
+    document.getElementById('post-title').value = '';
+    document.getElementById('post-body').value = '';
+    setTimeout(function() { btn.disabled = false; btn.textContent = '发布'; }, 3000);
+  })
+  .catch(function(err) {
+    btn.disabled = false;
+    btn.textContent = '发布';
+    showError('发布失败：' + (err.message || '未知错误'));
+  });
+}
+
+function openUrl() {
+  var url = document.getElementById('device-url').href;
+  window.open(url, '_blank');
+}
+</script>
 </body>
 </html>
