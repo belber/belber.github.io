@@ -443,6 +443,9 @@ a {
   img {
     max-width: 100%;
     border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    cursor: zoom-in;
+    transition: box-shadow 0.2s;
   }
 }
 
@@ -545,5 +548,27 @@ a {
 
   .post-article-title {
     font-size: 22px;
+  }
+}
+
+// === Lightbox ===
+.lightbox-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  cursor: zoom-out;
+
+  &.active { display: flex; }
+
+  img {
+    max-width: 90vw;
+    max-height: 90vh;
+    border-radius: 4px;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.4);
+    object-fit: contain;
   }
 }

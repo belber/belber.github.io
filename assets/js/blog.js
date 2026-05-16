@@ -200,6 +200,13 @@
               });
             });
           }
+          // Lightbox：图片点击放大
+          postDisplayEl.querySelectorAll('.post-article-content img').forEach(function(img) {
+            img.addEventListener('click', function(e) {
+              openLightbox(this.src);
+            });
+          });
+
           // 过渡动画
           postDisplayEl.style.animation = 'none';
           postDisplayEl.offsetHeight; // 触发回流
@@ -263,6 +270,35 @@
     if (sidebar) sidebar.classList.remove('open');
     if (overlay) overlay.classList.remove('active');
   }
+
+  // === Lightbox ===
+  function openLightbox(src) {
+    var overlay = document.getElementById('lightbox-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'lightbox-overlay';
+      overlay.className = 'lightbox-overlay';
+      overlay.onclick = closeLightbox;
+      document.body.appendChild(overlay);
+    }
+    overlay.innerHTML = '<img src="' + src + '" alt="">';
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeLightbox() {
+    var overlay = document.getElementById('lightbox-overlay');
+    if (overlay) {
+      overlay.classList.remove('active');
+      overlay.innerHTML = '';
+    }
+    document.body.style.overflow = '';
+  }
+
+  // ESC 关闭 Lightbox
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeLightbox();
+  });
 
   // === 初始化 ===
   function init() {
