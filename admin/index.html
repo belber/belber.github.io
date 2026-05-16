@@ -64,11 +64,18 @@
     .confirm-box h3 { font-size: 16px; margin-bottom: 8px; color: #2b2b2b; }
     .confirm-box p { font-size: 14px; color: #666; margin-bottom: 20px; line-height: 1.5; }
     .confirm-box .confirm-actions { display: flex; gap: 8px; justify-content: flex-end; }
+    .admin-header { display: none; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .admin-header .back-link { margin-bottom: 0; }
+    .logout-btn { font-size: 13px; color: #999; background: none; border: none; cursor: pointer; padding: 4px 8px; border-radius: 4px; }
+    .logout-btn:hover { color: #a594dd; background: #f8f4fc; }
   </style>
 </head>
 <body>
 <div id="app">
-  <a class="back-link" href="/">← 返回博客</a>
+  <div id="admin-header" class="admin-header">
+    <a class="back-link" href="/">← 返回博客</a>
+    <button class="logout-btn" onclick="logout()">切换账号</button>
+  </div>
 
   <!-- 登录页 -->
   <div id="login-view" class="login-prompt">
@@ -105,7 +112,6 @@
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn btn-primary" id="publish-btn" onclick="publish()">发布</button>
       <button class="btn btn-outline btn-sm" id="cancel-edit-btn" onclick="cancelEdit()" style="display:none">取消编辑</button>
-      <button class="btn btn-outline" onclick="logout()">切换账号</button>
     </div>
     <div id="status" class="status"></div>
   </div>
@@ -151,6 +157,7 @@ let editingFile = null; // { path, sha } when editing existing post
   if (saved) {
     accessToken = saved;
     document.getElementById('login-view').style.display = 'none';
+    document.getElementById('admin-header').style.display = 'flex';
     document.getElementById('posts-view').style.display = 'block';
     loadPosts();
   }
@@ -173,6 +180,7 @@ function loginWithToken() {
     accessToken = token;
     sessionStorage.setItem('gh_token', token);
     document.getElementById('login-view').style.display = 'none';
+    document.getElementById('admin-header').style.display = 'flex';
     document.getElementById('posts-view').style.display = 'block';
     loadPosts();
   })
@@ -185,6 +193,7 @@ function logout() {
   accessToken = null;
   editingFile = null;
   sessionStorage.removeItem('gh_token');
+  document.getElementById('admin-header').style.display = 'none';
   document.getElementById('posts-view').style.display = 'none';
   document.getElementById('editor-view').style.display = 'none';
   document.getElementById('login-view').style.display = 'block';
