@@ -100,6 +100,30 @@ a {
   }
 }
 
+.sidebar-footer {
+  margin-top: auto;
+  padding: 10px 16px;
+  border-top: 1px solid $border;
+
+  .admin-gear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    color: $text-muted;
+    text-decoration: none;
+    font-size: 16px;
+    border-radius: 6px;
+    transition: background 0.15s;
+
+    &:hover {
+      background: $light-bg;
+      color: $accent;
+    }
+  }
+}
+
 // === 侧栏折叠/展开 ===
 #sidebar.collapsed {
   width: 48px;
@@ -111,6 +135,12 @@ a {
   .post-list { display: none; }
   .sidebar-header-row { justify-content: center; }
   .sidebar-toggle { margin-left: 0; }
+
+  .sidebar-footer {
+    padding: 10px 0;
+    border-top: none;
+    text-align: center;
+  }
 }
 
 // === 手机端侧栏（覆盖层） ===
@@ -392,6 +422,9 @@ a {
     transform: translateX(0);
   }
 
+  // 手机端不需要侧栏内的折叠按钮（由汉堡按钮控制）
+  .sidebar-toggle { display: none; }
+
   #content {
     height: 100vh;
     padding: 20px;
@@ -399,7 +432,7 @@ a {
 
   .mobile-menu-btn {
     position: fixed;
-    top: 12px;
+    bottom: 12px;
     left: 12px;
     z-index: 100;
     width: 36px;
@@ -414,6 +447,8 @@ a {
     align-items: center;
     justify-content: center;
     box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+
+    &.hidden { display: none; }
   }
 }
 

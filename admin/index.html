@@ -87,12 +87,13 @@
 
   <!-- 登录页 -->
   <div id="login-view" class="login-prompt">
-    <h2>写一篇日记</h2>
+    <h2>使用 GitHub Token 登录</h2>
     <div class="token-input-wrap">
       <input type="password" id="token-input" placeholder="粘贴 Personal Access Token" autocomplete="off" style="width:320px">
       <button class="btn btn-primary" onclick="loginWithToken()">登录</button>
     </div>
     <div class="sub" style="margin-top:8px;">需要 GitHub Token 才能发布文章</div>
+    <div id="login-status" class="status" style="margin-top:12px;text-align:center"></div>
     <div class="help-text">
       如何获取 Token：<br>
       1. 打开 <a href="https://github.com/settings/tokens" target="_blank">Personal access tokens</a> → <b>Tokens (classic)</b><br>
@@ -174,7 +175,8 @@ let editingFile = null; // { path, sha } when editing existing post
 // === 登录 ===
 function loginWithToken() {
   var token = document.getElementById('token-input').value.trim();
-  if (!token) { showStatus('请输入 token', 'error'); return; }
+  var loginStatus = document.getElementById('login-status');
+  if (!token) { loginStatus.textContent = '请输入 token'; loginStatus.className = 'status error'; return; }
 
   fetch('https://api.github.com/user', {
     headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github.v3+json' }
@@ -193,7 +195,8 @@ function loginWithToken() {
     loadPosts();
   })
   .catch(function(err) {
-    showStatus(err.message, 'error');
+    loginStatus.textContent = err.message;
+    loginStatus.className = 'status error';
   });
 }
 
