@@ -158,12 +158,60 @@ a {
 
 .month-nav {
   display: flex;
+  align-items: center;
   gap: 4px;
   padding: 10px 16px;
   border-bottom: 1px solid $border;
   background: darken($page-bg, 1%);
-  overflow-x: auto;
+  flex-wrap: wrap;
   font-size: 12px;
+  position: relative;
+
+  .year-selector {
+    font-weight: 600;
+    color: $text;
+    padding: 3px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+
+    &:hover { color: $accent; }
+
+    .year-arrow {
+      font-size: 9px;
+      color: $text-muted;
+    }
+  }
+
+  .year-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 16px;
+    background: #fff;
+    border: 1px solid $border;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    z-index: 50;
+    padding: 4px;
+    min-width: 80px;
+  }
+
+  .year-option {
+    display: block;
+    width: 100%;
+    padding: 6px 12px;
+    border: none;
+    background: transparent;
+    color: $text;
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 6px;
+    text-align: left;
+
+    &:hover { background: $light-bg; }
+    &.active { background: $primary; color: #fff; }
+  }
 
   .month-btn {
     padding: 3px 12px;
@@ -174,19 +222,13 @@ a {
     cursor: pointer;
     font-size: 12px;
     white-space: nowrap;
+    flex-shrink: 0;
 
     &:hover { background: $light-bg; color: $text; }
     &.active {
       background: $primary;
       color: #fff;
     }
-  }
-
-  .year-label {
-    font-weight: 600;
-    color: $text;
-    padding: 3px 8px;
-    font-size: 12px;
   }
 }
 
@@ -328,33 +370,16 @@ a {
 // === 欢迎区 ===
 .welcome-area {
   animation: fadeIn 0.3s ease;
-  max-width: 520px;
 }
 
 .welcome-hero {
-  height: 200px;
+  height: 220px;
   border-radius: 12px;
   background-size: cover;
   background-position: center;
   position: relative;
   overflow: hidden;
   margin-bottom: 0;
-}
-
-.welcome-hero-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(transparent 50%, rgba(0,0,0,0.55));
-  display: flex;
-  align-items: flex-end;
-  padding: 20px;
-
-  .welcome-hero-label {
-    color: rgba(255,255,255,0.75);
-    font-size: 12px;
-    letter-spacing: 3px;
-    font-weight: 400;
-  }
 }
 
 .welcome-body {
@@ -370,13 +395,15 @@ a {
 }
 
 .welcome-quote {
-  font-size: 17px;
-  line-height: 1.9;
+  font-size: 19px;
+  line-height: 1.6;
   color: $text;
   margin: 0;
-  font-weight: 400;
+  font-weight: 600;
   border: none;
   padding: 0;
+  font-family: "Noto Serif SC", "Source Han Serif SC", Georgia, serif;
+  letter-spacing: 0.5px;
 }
 
 .welcome-signature {

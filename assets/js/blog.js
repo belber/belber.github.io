@@ -47,31 +47,76 @@
   var postListEl = document.getElementById('post-list');
   var monthNavEl = document.getElementById('month-nav');
   var postDisplayEl = document.getElementById('post-display');
-  var welcomeEl = document.getElementById('welcome-message');
+  var welcomeEl = document.getElementById('welcome-area');
   var currentActiveItem = null;
 
   function renderMonthNav(posts) {
     var months = getMonths(posts);
-    var html = '';
-    var currentYear = null;
-    months.forEach(function(m, i) {
-      if (currentYear !== m.year) {
-        currentYear = m.year;
-        html += '<span class="year-label">' + m.year + '</span>';
-      }
-      html += '<button class="month-btn' + (i === 0 ? ' active' : '') + '" data-month="' + m.year + '-' + String(m.month + 1).padStart(2, '0') + '">' + m.label + '</button>';
+    var years = [];
+    months.forEach(function(m) {
+      if (years.indexOf(m.year) === -1) years.push(m.year);
     });
-    monthNavEl.innerHTML = html;
+    years.sort(function(a, b) { return b - a; }); // 倒序
 
-    // 绑定月份筛选
-    monthNavEl.querySelectorAll('.month-btn').forEach(function(btn) {
-      btn.addEventListener('click', function(e) {
-        monthNavEl.querySelectorAll('.month-btn').forEach(function(b) { b.classList.remove('active'); });
-        btn.classList.add('active');
-        renderPostList(posts, btn.dataset.month);
+    var selectedYear = years[0]; // 默认最新年份
+    var selectedMonth = months.length > 0 ? months[0].key : null;
+
+    function render() {
+      var yearMonths = months.filter(function(m) { return m.year === selectedYear; });
+      var html = '<span class="year-selector" onclick="toggleYearDropdown()">' + selectedYear + ' <span class="year-arrow">▼</span></span>';
+      html += '<div id="year-dropdown" class="year-dropdown" style="display:none">';
+      years.forEach(function(y) {
+        html += '<button class="year-option' + (y === selectedYear ? ' active' : '') + '" data-year="' + y + '">' + y + '</button>';
       });
-    });
+      html += '</div>';
+      yearMonths.forEach(function(m) {
+        var key = m.year + '-' + String(m.month + 1).padStart(2, '0');
+        html += '<button class="month-btn' + (key === selectedMonth ? ' active' : '') + '" data-month="' + key + '">' + monthNames[m.month] + '</button>';
+      });
+      monthNavEl.innerHTML = html;
+
+      // 绑定月份筛选
+      monthNavEl.querySelectorAll('.month-btn').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          selectedMonth = btn.dataset.month;
+          monthNavEl.querySelectorAll('.month-btn').forEach(function(b) { b.classList.remove('active'); });
+          btn.classList.add('active');
+          renderPostList(posts, btn.dataset.month);
+        });
+      });
+
+      // 绑定年份切换
+      document.querySelectorAll('.year-option').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          selectedYear = parseInt(btn.dataset.year, 10);
+          closeYearDropdown();
+          render();
+          // 选中年份的第一个月
+          var firstMonth = monthNavEl.querySelector('.month-btn');
+          if (firstMonth) firstMonth.click();
+        });
+      });
+    }
+
+    render();
   }
+
+  window.toggleYearDropdown = function() {
+    var dd = document.getElementById('year-dropdown');
+    if (dd) dd.style.display = dd.style.display === 'none' ? '' : 'none';
+  };
+
+  function closeYearDropdown() {
+    var dd = document.getElementById('year-dropdown');
+    if (dd) dd.style.display = 'none';
+  }
+
+  // 点击其他区域关闭年份下拉
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.year-selector') && !e.target.closest('.year-dropdown')) {
+      closeYearDropdown();
+    }
+  });
 
   function renderPostList(posts, activeMonthKey) {
     var groups = groupByMonth(posts);
@@ -261,6 +306,20 @@
       sidebar.classList.toggle('collapsed');
       var btn = document.getElementById('sidebar-toggle');
       if (btn) btn.textContent = sidebar.classList.contains('collapsed') ? '▶' : '◀';
+
+      // 折叠时保存宽度并清除内联样式，让 CSS 的 collapsed 宽度生效；
+      // 展开时恢复内联宽度
+      if (sidebar.classList.contains('collapsed')) {
+        sidebar.dataset.expandedWidth = sidebar.style.width || getComputedStyle(sidebar).width;
+        sidebar.style.width = '';
+        sidebar.style.minWidth = '';
+      } else {
+        var w = sidebar.dataset.expandedWidth;
+        if (w) {
+          sidebar.style.width = w;
+          sidebar.style.minWidth = w;
+        }
+      }
     }
   }
 
@@ -340,6 +399,11 @@
       sidebar.classList.remove('collapsed');
       var toggleBtn = document.getElementById('sidebar-toggle');
       if (toggleBtn) toggleBtn.textContent = '◀';
+      var w = sidebar.dataset.expandedWidth;
+      if (w) {
+        sidebar.style.width = w;
+        sidebar.style.minWidth = w;
+      }
     }
   });
 
