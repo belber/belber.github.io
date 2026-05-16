@@ -153,13 +153,14 @@
         var article = doc.querySelector('.post-article');
         if (article) {
           postDisplayEl.innerHTML = article.outerHTML;
-          // 计算阅读时长
+          // 计算字数和阅读时长
           var contentEl = postDisplayEl.querySelector('.post-article-content');
           var etaEl = postDisplayEl.querySelector('.post-article-eta');
           if (contentEl && etaEl) {
             var text = contentEl.textContent.replace(/\s+/g, '');
-            var minutes = Math.max(1, Math.ceil(text.length / 300));
-            etaEl.textContent = minutes + ' 分钟';
+            var charCount = text.length;
+            var minutes = Math.max(1, Math.ceil(charCount / 300));
+            etaEl.textContent = charCount + ' 字 · ' + minutes + ' 分钟';
           }
           // 上下篇导航
           var articleEl = postDisplayEl.querySelector('.post-article');

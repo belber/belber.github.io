@@ -334,18 +334,29 @@ a {
 }
 
 .post-article-header {
-  margin-bottom: 24px;
+  margin-bottom: 28px;
+}
+
+.post-article-title {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  line-height: 1.35;
+  color: $text;
+  margin-bottom: 12px;
 }
 
 .post-article-meta {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 6px;
+  font-size: 12px;
+  color: $text-muted;
+  padding-bottom: 14px;
+  border-bottom: 1px solid $border;
 }
 
 .post-article-eta {
-  font-size: 12px;
   color: $text-muted;
 
   &:not(:empty)::before {
@@ -354,17 +365,9 @@ a {
   }
 }
 
-.post-article-title {
-  font-size: 28px;
-  font-weight: 600;
-  letter-spacing: -0.5px;
-  line-height: 1.3;
-  color: $text;
-}
-
 .post-article-date {
-  font-size: 13px;
-  color: $primary;
+  font-size: 12px;
+  color: $text-muted;
 }
 
 .post-article-content {
