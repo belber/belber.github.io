@@ -1,8 +1,6 @@
 ---
 ---
 
-@use 'sass:color';
-
 // === 配色 ===
 $primary:       #d4a373;
 $light-bg:      #faedcd;
@@ -76,7 +74,7 @@ a {
   gap: 4px;
   padding: 10px 16px;
   border-bottom: 1px solid $border;
-  background: color.adjust($page-bg, $lightness: -1%);
+  background: darken($page-bg, 1%);
   overflow-x: auto;
   font-size: 12px;
 
@@ -266,7 +264,7 @@ a {
   blockquote {
     border-left: 3px solid $primary;
     padding-left: 16px;
-    color: color.adjust($text, $lightness: 20%);
+    color: lighten($text, 20%);
     font-style: normal;
     margin-bottom: 1em;
   }
