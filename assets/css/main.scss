@@ -264,7 +264,7 @@ a {
   flex: 1;
   overflow-y: auto;
   padding: 40px 48px;
-  background: #fff;
+  background: linear-gradient(135deg, #faf8fd 0%, #fff 50%);
 
   &::-webkit-scrollbar {
     width: 4px;
