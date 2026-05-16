@@ -7,9 +7,9 @@
   <link rel="stylesheet" href="/assets/css/main.css">
   <style>
     body { background: #fff; }
-    #app { max-width: 100%; margin: 0 auto; padding: 40px 20px; }
+    #app { max-width: 100%; margin: 0 auto; padding: 40px 20px; display: block; }
     @media (min-width: 900px) {
-      #app { max-width: 60%; padding: 60px 40px; }
+      #app { max-width: 680px; padding: 60px 40px; }
       textarea { min-height: 360px; }
       .login-prompt { padding: 120px 20px; }
     }
@@ -17,28 +17,28 @@
     .form-group { margin-bottom: 16px; }
     label { display: block; font-size: 13px; font-weight: 500; color: #2b2b2b; margin-bottom: 4px; }
     input, textarea { width: 100%; padding: 10px 12px; border: 1px solid #e0d5c0; border-radius: 8px; font-size: 15px; font-family: inherit; box-sizing: border-box; outline: none; transition: border-color 0.15s; }
-    input:focus, textarea:focus { border-color: #d4a373; }
+    input:focus, textarea:focus { border-color: #a594dd; }
     textarea { min-height: 200px; resize: vertical; line-height: 1.7; }
     .btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 24px; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; transition: opacity 0.15s; }
-    .btn-primary { background: #d4a373; color: #fff; }
+    .btn-primary { background: #a594dd; color: #fff; }
     .btn-primary:hover { opacity: 0.9; }
     .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn-outline { background: transparent; color: #d4a373; border: 1px solid #d4a373; }
-    .btn-outline:hover { background: #faedcd; }
+    .btn-outline { background: transparent; color: #a594dd; border: 1px solid #a594dd; }
+    .btn-outline:hover { background: #f8f4fc; }
     .status { margin-top: 12px; font-size: 13px; color: #666; padding: 8px 12px; border-radius: 6px; display: none; }
     .status.success { display: block; background: #ccd5ae; color: #2b2b2b; }
     .status.error { display: block; background:#f5d0d0; color:#8b0000; }
-    .status.info { display: block; background:#faedcd; color:#2b2b2b; }
+    .status.info { display: block; background:#f8f4fc; color:#2b2b2b; }
     .login-prompt { text-align: center; padding: 80px 20px; }
     .login-prompt h2 { font-size: 18px; font-weight: 400; color: #2b2b2b; margin-bottom: 20px; }
     .login-prompt .sub { font-size: 14px; color: #999; margin-top: 12px; line-height: 1.6; }
     .editor-area { display: none; }
     .back-link { font-size: 13px; color: #999; margin-bottom: 16px; display: block; }
-    .back-link:hover { color: #d4a373; }
+    .back-link:hover { color: #a594dd; }
     .token-input-wrap { display: flex; gap: 8px; align-items: center; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
     .token-input-wrap input { width: 340px; max-width: 100%; }
     .help-text { font-size: 12px; color: #999; margin-top: 16px; line-height: 1.6; }
-    .help-text a { color: #d4a373; }
+    .help-text a { color: #a594dd; }
   </style>
 </head>
 <body>
