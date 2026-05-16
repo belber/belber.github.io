@@ -42,8 +42,8 @@
     .posts-view { display: none; }
     .posts-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
     .posts-toolbar h1 { margin-bottom: 0; }
-    .posts-list-admin { display: flex; flex-direction: column; gap: 6px; }
-    .post-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border: 1px solid #e8e0f0; border-radius: 8px; transition: background 0.15s; }
+    .posts-list-admin { display: flex; flex-direction: column; gap: 4px; }
+    .post-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border: 1px solid #e8e0f0; border-radius: 8px; transition: background 0.15s; }
     .post-row:hover { background: #f8f4fc; }
     .post-row .post-info { flex: 1; min-width: 0; }
     .post-row .post-date { font-size: 12px; color: #999; }
@@ -68,6 +68,14 @@
     .admin-header .back-link { margin-bottom: 0; }
     .logout-btn { font-size: 13px; color: #999; background: none; border: none; cursor: pointer; padding: 4px 8px; border-radius: 4px; }
     .logout-btn:hover { color: #a594dd; background: #f8f4fc; }
+    .admin-month-group { margin-bottom: 2px; border-radius: 8px; overflow: hidden; }
+    .admin-month-group.expanded { background: #faf8fd; }
+    .admin-month-header { display: flex; align-items: center; gap: 6px; padding: 10px 12px; cursor: pointer; user-select: none; border-radius: 8px; transition: background 0.15s; }
+    .admin-month-header:hover { background: #f8f4fc; }
+    .admin-month-icon { font-size: 10px; color: #a594dd; width: 14px; text-align: center; flex-shrink: 0; }
+    .admin-month-label { font-size: 13px; font-weight: 600; color: #2b2b2b; }
+    .admin-month-count { font-size: 11px; color: #999; font-weight: 400; }
+    .admin-month-posts { padding: 0 0 4px 0; display: flex; flex-direction: column; gap: 3px; }
   </style>
 </head>
 <body>
@@ -229,7 +237,7 @@ function cancelEdit() {
   showPosts();
 }
 
-// === 加载文章列表 ===
+// === 加载文章列表（按月分组） ===
 function loadPosts() {
   var list = document.getElementById('posts-list');
   list.innerHTML = '<div class="empty-state">加载中...</div>';
@@ -246,21 +254,48 @@ function loadPosts() {
       list.innerHTML = '<div class="empty-state">还没有文章</div>';
       return;
     }
-    // 按文件名倒序（最新的在前）
-    files.sort(function(a, b) { return b.name.localeCompare(a.name); });
-    var html = '';
+
+    // 按月分组
+    var groups = {};
+    var monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     files.forEach(function(f) {
-      if (f.type !== 'file') return;
-      var datePart = f.name.substring(0, 10);
-      var namePart = f.name.substring(11).replace(/\.md$/, '').replace(/-/g, ' ');
-      html += '<div class="post-row">';
-      html += '  <div class="post-info">';
-      html += '    <div class="post-date">' + datePart + '</div>';
-      html += '    <div class="post-name">' + namePart + '</div>';
+      if (f.type !== 'file' || !f.name.match(/^\d{4}-\d{2}-\d{2}-/)) return;
+      var key = f.name.substring(0, 7); // YYYY-MM
+      var ym = key.split('-');
+      var label = monthNames[parseInt(ym[1], 10) - 1] + ' ' + ym[0];
+      if (!groups[key]) groups[key] = { key: key, label: label, posts: [] };
+      groups[key].posts.push(f);
+    });
+
+    var sorted = Object.keys(groups).sort().reverse();
+    // 最新月份展开，其余折叠
+    var expandedKey = sorted[0];
+
+    var html = '';
+    sorted.forEach(function(k) {
+      var g = groups[k];
+      var isExpanded = (k === expandedKey);
+      html += '<div class="admin-month-group' + (isExpanded ? ' expanded' : '') + '">';
+      html += '  <div class="admin-month-header" onclick="toggleAdminMonth(this)">';
+      html += '    <span class="admin-month-icon">' + (isExpanded ? '▼' : '▶') + '</span>';
+      html += '    <span class="admin-month-label">' + g.label + ' <span class="admin-month-count">(' + g.posts.length + ')</span></span>';
       html += '  </div>';
-      html += '  <div class="post-actions">';
-      html += '    <button class="btn btn-outline btn-sm" onclick="editPost(\'' + f.path + '\',\'' + f.sha + '\')">编辑</button>';
-      html += '    <button class="btn btn-danger btn-sm" onclick="confirmDelete(\'' + namePart + '\',\'' + f.path + '\',\'' + f.sha + '\')">删除</button>';
+      html += '  <div class="admin-month-posts"' + (isExpanded ? '' : ' style="display:none"') + '>';
+      g.posts.sort(function(a, b) { return b.name.localeCompare(a.name); });
+      g.posts.forEach(function(f) {
+        var datePart = f.name.substring(0, 10);
+        var namePart = f.name.substring(11).replace(/\.md$/, '').replace(/-/g, ' ');
+        html += '<div class="post-row">';
+        html += '  <div class="post-info">';
+        html += '    <div class="post-date">' + datePart + '</div>';
+        html += '    <div class="post-name">' + namePart + '</div>';
+        html += '  </div>';
+        html += '  <div class="post-actions">';
+        html += '    <button class="btn btn-outline btn-sm" onclick="editPost(\'' + f.path + '\',\'' + f.sha + '\')">编辑</button>';
+        html += '    <button class="btn btn-danger btn-sm" onclick="confirmDelete(\'' + namePart + '\',\'' + f.path + '\',\'' + f.sha + '\')">删除</button>';
+        html += '  </div>';
+        html += '</div>';
+      });
       html += '  </div>';
       html += '</div>';
     });
@@ -269,6 +304,21 @@ function loadPosts() {
   .catch(function(err) {
     list.innerHTML = '<div class="empty-state">加载失败：' + err.message + '</div>';
   });
+}
+
+function toggleAdminMonth(header) {
+  var group = header.parentNode;
+  var postsDiv = group.querySelector('.admin-month-posts');
+  var icon = header.querySelector('.admin-month-icon');
+  if (postsDiv.style.display === 'none') {
+    postsDiv.style.display = '';
+    icon.textContent = '▼';
+    group.classList.add('expanded');
+  } else {
+    postsDiv.style.display = 'none';
+    icon.textContent = '▶';
+    group.classList.remove('expanded');
+  }
 }
 
 // === 编辑文章 ===
