@@ -135,7 +135,7 @@
     currentActiveItem = listItem;
 
     // 移动端选择文章后收起侧栏
-    if (window.innerWidth < 768) {
+    if (window.innerWidth < 660) {
       closeSidebar();
     }
 
@@ -206,7 +206,7 @@
     var overlay = document.getElementById('sidebar-overlay');
     var mobileBtn = document.querySelector('.mobile-menu-btn');
     if (!sidebar) return;
-    if (window.innerWidth < 768) {
+    if (window.innerWidth < 660) {
       sidebar.classList.remove('collapsed');
       var willOpen = !sidebar.classList.contains('open');
       sidebar.classList.toggle('open');
@@ -264,13 +264,13 @@
     var sidebar = document.getElementById('sidebar');
     var mobileBtn = document.querySelector('.mobile-menu-btn');
     if (!sidebar) return;
-    if (window.innerWidth >= 768 && sidebar.classList.contains('open')) {
+    if (window.innerWidth >= 660 && sidebar.classList.contains('open')) {
       sidebar.classList.remove('open');
       var overlay = document.getElementById('sidebar-overlay');
       if (overlay) overlay.classList.remove('active');
       if (mobileBtn) mobileBtn.classList.remove('hidden');
     }
-    if (window.innerWidth >= 768 && sidebar.classList.contains('collapsed')) {
+    if (window.innerWidth >= 660 && sidebar.classList.contains('collapsed')) {
       // 从手机端展开后，如果侧栏是折叠状态，展开它
       sidebar.classList.remove('collapsed');
       var toggleBtn = document.getElementById('sidebar-toggle');

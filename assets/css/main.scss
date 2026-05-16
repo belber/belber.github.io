@@ -102,20 +102,19 @@ a {
 
 .sidebar-footer {
   margin-top: auto;
-  padding: 10px 16px;
-  border-top: 1px solid $border;
+  padding: 8px 16px;
 
   .admin-gear {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 26px;
-    height: 26px;
+    width: 32px;
+    height: 32px;
     color: $text-muted;
     text-decoration: none;
-    font-size: 16px;
-    border-radius: 6px;
-    transition: background 0.15s;
+    font-size: 20px;
+    border-radius: 8px;
+    transition: background 0.15s, color 0.15s;
 
     &:hover {
       background: $light-bg;
@@ -137,8 +136,7 @@ a {
   .sidebar-toggle { margin-left: 0; }
 
   .sidebar-footer {
-    padding: 10px 0;
-    border-top: none;
+    padding: 8px 0;
     text-align: center;
   }
 }
@@ -423,7 +421,7 @@ a {
 }
 
 // === 手机端 ===
-@media (max-width: 767px) {
+@media (max-width: 659px) {
   #app {
     flex-direction: column;
   }
