@@ -6,7 +6,7 @@ layout: default
     <h1 class="post-article-title">{{ page.title }}</h1>
     <div class="post-article-meta">
       <time class="post-article-date" datetime="{{ page.date | date_to_xmlschema }}">
-        {{ page.date | date: "%B %-d, %Y" }}
+        {{ page.date | date: "%B %-d, %Y %H:%M" }}
       </time>
       <span class="post-article-eta"></span>
     </div>

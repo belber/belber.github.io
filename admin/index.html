@@ -99,7 +99,7 @@
     <h2>使用 GitHub Token 登录</h2>
     <div class="token-input-wrap">
       <input type="password" id="token-input" placeholder="粘贴 Personal Access Token" autocomplete="off" style="width:320px">
-      <button class="btn btn-primary" onclick="loginWithToken()">登录</button>
+      <button class="btn btn-primary" id="login-btn" onclick="loginWithToken()">登录</button>
     </div>
     <div class="sub" style="margin-top:8px;">需要 GitHub Token 才能发布文章</div>
     <div id="login-status" class="status" style="margin-top:12px;text-align:center"></div>
@@ -135,7 +135,7 @@
     </div>
     <div id="status" class="status"></div>
     <!-- 已上传图片浏览 -->
-    <div id="image-browser" class="image-browser" style="display:none;margin-top:20px">
+    <div id="image-browser" class="image-browser" style="display:none">
       <div class="image-browser-header" onclick="toggleImageBrowser()">
         <span class="image-browser-icon">▶</span>
         <span class="image-browser-label">已上传图片</span>
@@ -180,6 +180,7 @@ const BRANCH = 'main';
 
 let accessToken = null;
 let editingFile = null; // { path, sha } when editing existing post
+let pendingImages = []; // { filename: String, dataUrl: String } 已上传但未提交到 GitHub 的图片
 
 // === 页面初始化：从 sessionStorage 恢复 token ===
 (function init() {
@@ -198,6 +199,10 @@ function loginWithToken() {
   var token = document.getElementById('token-input').value.trim();
   var loginStatus = document.getElementById('login-status');
   if (!token) { loginStatus.textContent = '请输入 token'; loginStatus.className = 'status error'; return; }
+
+  var loginBtn = document.getElementById('login-btn');
+  loginBtn.disabled = true;
+  loginBtn.textContent = '登录中...';
 
   fetch('https://api.github.com/user', {
     headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github.v3+json' }
@@ -218,6 +223,8 @@ function loginWithToken() {
   .catch(function(err) {
     loginStatus.textContent = err.message;
     loginStatus.className = 'status error';
+    loginBtn.disabled = false;
+    loginBtn.textContent = '登录';
   });
 }
 
@@ -235,18 +242,19 @@ function showStatus(msg, type) {
   var s = document.getElementById('status');
   s.textContent = msg;
   s.className = 'status ' + type;
+  s.style.display = '';
 }
 
 // === 视图切换 ===
 function showPosts() {
   document.getElementById('editor-view').style.display = 'none';
-  document.getElementById('image-browser').style.display = 'none';
   document.getElementById('posts-view').style.display = 'block';
   loadPosts();
 }
 
 function showEditor() {
   editingFile = null;
+  pendingImages = [];
   document.getElementById('editor-title').textContent = '写文章';
   document.getElementById('publish-btn').textContent = '发布';
   document.getElementById('cancel-edit-btn').style.display = 'none';
@@ -254,12 +262,13 @@ function showEditor() {
   document.getElementById('post-body').value = '';
   document.getElementById('status').className = 'status';
   document.getElementById('status').style.display = 'none';
+  document.getElementById('image-browser').style.display = 'none';
   document.getElementById('posts-view').style.display = 'none';
-  document.getElementById('image-browser').style.display = '';
   document.getElementById('editor-view').style.display = 'block';
 }
 
 function cancelEdit() {
+  pendingImages = [];
   showPosts();
 }
 
@@ -352,7 +361,6 @@ function editPost(path, sha) {
   editingFile = null;
   document.getElementById('editor-title').textContent = '加载中...';
   document.getElementById('posts-view').style.display = 'none';
-  document.getElementById('image-browser').style.display = '';
   document.getElementById('editor-view').style.display = 'block';
 
   fetch('https://api.github.com/repos/' + REPO + '/contents/' + path, {
@@ -383,6 +391,7 @@ function editPost(path, sha) {
     document.getElementById('post-body').value = body;
     document.getElementById('status').className = 'status';
     document.getElementById('status').style.display = 'none';
+    syncBrowser();
   })
   .catch(function(err) {
     showStatus('加载失败：' + err.message, 'error');
@@ -447,62 +456,117 @@ function publish() {
   var tz = '+08:00';
   var frontMatter = '---\nlayout: post\ntitle: "' + title + '"\ndate: ' + dateStr + ' ' + timeStr + ' ' + tz + '\n---\n\n' + body;
 
-  if (editingFile) {
-    // 更新已有文章
-    fetch('https://api.github.com/repos/' + REPO + '/contents/' + editingFile.path, {
+  // === 上传正文中引用的 pending 图片 ===
+
+  // 上传单个图片，只创建新文件，已存在则跳过
+  function uploadImage(img) {
+    return fetch('https://api.github.com/repos/' + REPO + '/contents/assets/images/' + img.filename, {
       method: 'PUT',
       headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' },
       body: JSON.stringify({
-        message: 'update: ' + title,
-        content: btoa(unescape(encodeURIComponent(frontMatter))),
-        sha: editingFile.sha,
+        message: 'feat: upload ' + img.filename,
+        content: img.dataUrl.split(',')[1],
         branch: BRANCH
       })
+    }).then(function(r) {
+      if (r.status === 409) return; // 文件已存在，跳过
+      if (!r.ok) throw new Error('图片上传失败 (' + r.status + ')');
+      return r.json();
+    });
+  }
+
+  (function uploadPendingImages() {
+    var bodyForRefs = document.getElementById('post-body').value;
+    var refRegex = /!\[\]\(\/assets\/images\/([^)]+)\)/g;
+    var refMatches = [];
+    var m;
+    while ((m = refRegex.exec(bodyForRefs)) !== null) {
+      if (refMatches.indexOf(m[1]) === -1) refMatches.push(m[1]);
+    }
+
+    var imagesToUpload = pendingImages.filter(function(p) {
+      return refMatches.indexOf(p.filename) !== -1;
+    });
+
+    if (imagesToUpload.length === 0) { submitPost(); return; }
+
+    Promise.all(imagesToUpload.map(function(p) {
+      return uploadImage(p);
+    }))
+    .then(function() {
+      // 从 pending 中移除已提交的图片
+      var uploadedFilenames = imagesToUpload.map(function(p) { return p.filename; });
+      pendingImages = pendingImages.filter(function(p) {
+        return uploadedFilenames.indexOf(p.filename) === -1;
+      });
+      // 图片上传完后继续提交文章
+      submitPost();
     })
-    .then(function(r) { return r.json(); })
-    .then(function(result) {
-      if (result.message) throw new Error(result.message);
-      editingFile = { path: editingFile.path, sha: result.content.sha };
-      btn.textContent = '✓ 已保存';
-      showStatus('文章 "' + title + '" 已更新！', 'success');
-      setTimeout(function() {
+    .catch(function(err) {
+      btn.disabled = false;
+      btn.textContent = editingFile ? '保存修改' : '发布';
+      showStatus(err.message, 'error');
+    });
+  })();
+
+  function submitPost() {
+    if (editingFile) {
+      // 更新已有文章
+      fetch('https://api.github.com/repos/' + REPO + '/contents/' + editingFile.path, {
+        method: 'PUT',
+        headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' },
+        body: JSON.stringify({
+          message: 'update: ' + title,
+          content: btoa(unescape(encodeURIComponent(frontMatter))),
+          sha: editingFile.sha,
+          branch: BRANCH
+        })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(result) {
+        if (result.message) throw new Error(result.message);
+        editingFile = { path: editingFile.path, sha: result.content.sha };
+        btn.textContent = '✓ 已保存';
+        showStatus('文章 "' + title + '" 已更新！', 'success');
+        setTimeout(function() {
+          btn.disabled = false;
+          btn.textContent = '保存修改';
+        }, 2000);
+      })
+      .catch(function(err) {
         btn.disabled = false;
         btn.textContent = '保存修改';
-      }, 2000);
-    })
-    .catch(function(err) {
-      btn.disabled = false;
-      btn.textContent = '保存修改';
-      showStatus('保存失败：' + (err.message || '未知错误'), 'error');
-    });
-  } else {
-    // 新建文章
-    var slug = title.toLowerCase().replace(/[^\w一-鿿]+/g, '-').replace(/^-|-$/g, '') || 'post';
-    var filename = '_posts/' + dateStr + '-' + slug + '.md';
+        showStatus('保存失败：' + (err.message || '未知错误'), 'error');
+      });
+    } else {
+      // 新建文章
+      var slug = title.toLowerCase().replace(/[^\w一-鿿]+/g, '-').replace(/^-|-$/g, '') || 'post';
+      var filename = '_posts/' + dateStr + '-' + slug + '.md';
 
-    fetch('https://api.github.com/repos/' + REPO + '/contents/' + filename, {
-      method: 'PUT',
-      headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' },
-      body: JSON.stringify({
-        message: 'feat: ' + title,
-        content: btoa(unescape(encodeURIComponent(frontMatter))),
-        branch: BRANCH
+      fetch('https://api.github.com/repos/' + REPO + '/contents/' + filename, {
+        method: 'PUT',
+        headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' },
+        body: JSON.stringify({
+          message: 'feat: ' + title,
+          content: btoa(unescape(encodeURIComponent(frontMatter))),
+          branch: BRANCH
+        })
       })
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(result) {
-      if (result.message) throw new Error(result.message);
-      btn.textContent = '✓ 已发布';
-      showStatus('文章 "' + title + '" 已发布！', 'success');
-      document.getElementById('post-title').value = '';
-      document.getElementById('post-body').value = '';
-      setTimeout(function() { btn.disabled = false; btn.textContent = '发布'; }, 2000);
-    })
-    .catch(function(err) {
-      btn.disabled = false;
-      btn.textContent = '发布';
-      showStatus('发布失败：' + (err.message || '未知错误'), 'error');
-    });
+      .then(function(r) { return r.json(); })
+      .then(function(result) {
+        if (result.message) throw new Error(result.message);
+        btn.textContent = '✓ 已发布';
+        showStatus('文章 "' + title + '" 已发布！', 'success');
+        document.getElementById('post-title').value = '';
+        document.getElementById('post-body').value = '';
+        setTimeout(function() { btn.disabled = false; btn.textContent = '发布'; }, 2000);
+      })
+      .catch(function(err) {
+        btn.disabled = false;
+        btn.textContent = '发布';
+        showStatus('发布失败：' + (err.message || '未知错误'), 'error');
+      });
+    }
   }
 }
 // === 图片上传 ===
@@ -544,32 +608,16 @@ document.getElementById('file-input').addEventListener('change', function(e) {
       for (var i = 0; i < 3; i++) rand += chars.charAt(Math.floor(Math.random() * chars.length));
       var filename = 'assets/images/' + ds + '_' + rand + '.jpg';
 
-      // 上传到 GitHub
-      fetch('https://api.github.com/repos/' + REPO + '/contents/' + filename, {
-        method: 'PUT',
-        headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' },
-        body: JSON.stringify({
-          message: 'feat: upload ' + filename,
-          content: dataUrl.split(',')[1],
-          branch: BRANCH
-        })
-      })
-      .then(function(r) {
-        if (!r.ok) throw new Error('上传失败 (' + r.status + ')');
-        return r.json();
-      })
-      .then(function() {
-        var md = '![](' + '/assets/images/' + filename.split('/').pop() + ')\n';
-        var textarea = document.getElementById('post-body');
-        textarea.value = textarea.value + '\n' + md;
-        btn.textContent = '✓ 已上传';
-        setTimeout(function() { btn.disabled = false; btn.textContent = '上传图片'; }, 2000);
-      })
-      .catch(function(err) {
-        alert('上传失败：' + err.message);
-        btn.disabled = false;
-        btn.textContent = '上传图片';
-      });
+      // 存入暂存区（不提交 GitHub）
+      var shortName = filename.split('/').pop();
+      pendingImages.push({ filename: shortName, dataUrl: dataUrl });
+
+      var md = '![](' + '/assets/images/' + shortName + ')\n';
+      var textarea = document.getElementById('post-body');
+      textarea.value = textarea.value + '\n' + md;
+      syncBrowser();
+      btn.textContent = '✓ 已上传';
+      setTimeout(function() { btn.disabled = false; btn.textContent = '上传图片'; }, 2000);
     };
     img.onerror = function() {
       alert('图片格式无效，请选择有效的图片文件');
@@ -582,62 +630,143 @@ document.getElementById('file-input').addEventListener('change', function(e) {
   // 重置 input 以便再次选择同一文件
   e.target.value = '';
 });
-// === 已上传图片浏览 ===
+// === 已上传图片浏览：始终与正文中的 markdown 图片引用保持同步 ===
 function toggleImageBrowser() {
   var content = document.getElementById('image-browser-content');
   var icon = document.querySelector('.image-browser-icon');
   if (content.style.display === 'none') {
     content.style.display = '';
     icon.textContent = '▼';
-    loadImageBrowser();
+    syncBrowser();
   } else {
     content.style.display = 'none';
     icon.textContent = '▶';
   }
 }
 
-function loadImageBrowser() {
+function syncBrowser() {
+  var browser = document.getElementById('image-browser');
   var container = document.getElementById('image-browser-content');
+  var icon = document.querySelector('.image-browser-icon');
+
+  // 从正文提取 ![](/assets/images/xxx.jpg)
+  var text = document.getElementById('post-body').value;
+  var regex = /!\[\]\(\/assets\/images\/([^)]+)\)/g;
+  var filenames = [];
+  var match;
+  while ((match = regex.exec(text)) !== null) {
+    if (filenames.indexOf(match[1]) === -1) filenames.push(match[1]);
+  }
+
+  if (filenames.length === 0) {
+    browser.style.display = 'none';
+    return;
+  }
+
+  var isExpanded = container.style.display !== 'none';
+  browser.style.display = '';
+  container.style.display = '';
+  icon.textContent = '▼';
+
+  var html = '';
+  filenames.forEach(function(name) {
+    var safeName = name.replace(/"/g, '&quot;');
+    var isPending = pendingImages.some(function(p) { return p.filename === name; });
+    var imgSrc;
+    if (isPending) {
+      var pending = pendingImages.filter(function(p) { return p.filename === name; });
+      imgSrc = pending.length > 0 ? pending[0].dataUrl : '';
+    } else {
+      imgSrc = 'https://raw.githubusercontent.com/' + REPO + '/main/assets/images/' + encodeURI(name);
+    }
+    html += '<div class="image-browser-item" data-filename="' + safeName + '" title="' + safeName + '">';
+    html += '  <img src="' + imgSrc + '" alt="' + safeName + '">';
+    html += '</div>';
+  });
+  container.innerHTML = html;
+
+  // 点击缩略图预览大图
   container.onclick = function(e) {
     var item = e.target.closest('.image-browser-item');
-    if (item) insertImage(item.dataset.filename);
-  };
-  fetch('https://api.github.com/repos/' + REPO + '/contents/assets/images', {
-    headers: { 'Authorization': 'Bearer ' + accessToken, 'Accept': 'application/vnd.github.v3+json' }
-  })
-  .then(function(r) {
-    if (r.status === 404) { container.innerHTML = '<div class="empty-state" style="padding:20px">还没有上传过图片</div>'; return null; }
-    if (!r.ok) throw new Error('加载失败');
-    return r.json();
-  })
-  .then(function(files) {
-    if (!files || !files.length) {
-      container.innerHTML = '<div class="empty-state" style="padding:20px">还没有上传过图片</div>';
-      return;
+    if (item) {
+      previewImage(item.dataset.filename);
     }
-    // 按文件名倒序（最新的在前），取最近 50 张
-    files.sort(function(a, b) { return b.name.localeCompare(a.name); });
-    var html = '';
-    files.slice(0, 50).forEach(function(f) {
-      if (f.type !== 'file') return;
-      html += '<div class="image-browser-item" data-filename="' + f.name.replace(/"/g, '&quot;') + '" title="' + f.name.replace(/"/g, '&quot;') + '">';
-	      html += '  <img src="https://raw.githubusercontent.com/' + REPO + '/main/assets/images/' + encodeURI(f.name) + '" alt="' + f.name.replace(/"/g, '&quot;') + '" loading="lazy">';
-	      html += '</div>';
-      html += '  <img src="https://raw.githubusercontent.com/' + REPO + '/main/assets/images/' + f.name + '" alt="' + f.name + '" loading="lazy">';
-      html += '</div>';
-    });
-    container.innerHTML = html;
-  })
-  .catch(function() {
-    container.innerHTML = '<div class="empty-state" style="padding:20px;color:#e57373">加载失败</div>';
-  });
+  };
 }
+
+// 监听正文变化，自动同步已上传图片列表
+var syncTimer = null;
+document.getElementById('post-body').addEventListener('input', function() {
+  if (syncTimer) clearTimeout(syncTimer);
+  syncTimer = setTimeout(syncBrowser, 200);
+});
 
 function insertImage(filename) {
   var md = '![](' + '/assets/images/' + filename + ')\n';
   var textarea = document.getElementById('post-body');
   textarea.value = textarea.value + '\n' + md;
 }
+
+// === 图片预览 ===
+function previewImage(filename) {
+  var overlay = document.getElementById('preview-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'preview-overlay';
+    overlay.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:300;align-items:center;justify-content:center;cursor:zoom-out';
+    overlay.onclick = function(e) {
+      if (e.target === overlay) closePreview();
+    };
+    document.body.appendChild(overlay);
+  }
+
+  overlay.innerHTML = '';
+
+  var isPending = pendingImages.some(function(p) { return p.filename === filename; });
+  var imgSrc;
+  if (isPending) {
+    var pending = pendingImages.filter(function(p) { return p.filename === filename; });
+    imgSrc = pending.length > 0 ? pending[0].dataUrl : '';
+  } else {
+    imgSrc = 'https://raw.githubusercontent.com/' + REPO + '/main/assets/images/' + encodeURI(filename);
+  }
+
+  var wrapper = document.createElement('div');
+  wrapper.style.cssText = 'position:relative;display:flex;flex-direction:column;align-items:center;gap:12px';
+
+  var img = document.createElement('img');
+  img.src = imgSrc;
+  img.style.cssText = 'max-width:90vw;max-height:80vh;border-radius:4px;box-shadow:0 4px 32px rgba(0,0,0,0.4);object-fit:contain;cursor:default';
+
+  var btn = document.createElement('button');
+  btn.textContent = '插入图片';
+  btn.style.cssText = 'padding:8px 20px;background:#a594dd;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer';
+  btn.onclick = function() {
+    insertImage(filename);
+    closePreview();
+  };
+
+  wrapper.appendChild(img);
+  wrapper.appendChild(btn);
+  overlay.appendChild(wrapper);
+
+  overlay.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closePreview() {
+  var overlay = document.getElementById('preview-overlay');
+  if (overlay) {
+    overlay.style.display = 'none';
+    overlay.innerHTML = '';
+  }
+  document.body.style.overflow = '';
+}
+
+// ESC 关闭预览
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closePreview();
+});
 </script>
 </body>
 </html>
