@@ -30,6 +30,10 @@
     .editor-area { display: none; }
     .back-link { font-size: 13px; color: #999; margin-bottom: 16px; display: block; }
     .back-link:hover { color: #d4a373; }
+    .token-input-wrap { display: flex; gap: 8px; align-items: center; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
+    .token-input-wrap input { width: 340px; max-width: 100%; }
+    .help-text { font-size: 12px; color: #999; margin-top: 16px; line-height: 1.6; }
+    .help-text a { color: #d4a373; }
   </style>
 </head>
 <body>
@@ -39,8 +43,18 @@
   <!-- 登录页 -->
   <div id="login-view" class="login-prompt">
     <h2>写一篇日记</h2>
-    <button class="btn btn-primary" onclick="startLogin()">登录 GitHub</button>
-    <div class="sub">需要 GitHub 授权才能发布文章</div>
+    <div class="token-input-wrap">
+      <input type="password" id="token-input" placeholder="粘贴 Personal Access Token" autocomplete="off" style="width:320px">
+      <button class="btn btn-primary" onclick="loginWithToken()">登录</button>
+    </div>
+    <div class="sub" style="margin-top:8px;">需要 GitHub Token 才能发布文章</div>
+    <div class="help-text">
+      如何获取 Token：<br>
+      1. 打开 <a href="https://github.com/settings/tokens?type=beta" target="_blank">Fine-grained tokens</a><br>
+      2. Repository access → 选择 <b>belber/belber.github.io</b><br>
+      3. Permissions → Contents → 设为 <b>Read and write</b><br>
+      4. 生成后复制 token 粘贴到上方输入框
+    </div>
   </div>
 
   <!-- 编辑器 -->
@@ -54,74 +68,79 @@
       <label>正文（支持 Markdown）</label>
       <textarea id="post-body" placeholder="用 Markdown 写下你的想法..."></textarea>
     </div>
-    <button class="btn btn-primary" id="publish-btn" onclick="publish()">发布</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary" id="publish-btn" onclick="publish()">发布</button>
+      <button class="btn btn-outline" onclick="logout()">切换账号</button>
+    </div>
     <div id="status" class="status"></div>
   </div>
 </div>
 
 <script>
-const CLIENT_ID = 'Ov23li8hGMXyMY4f5nBA';
 const REPO = 'belber/belber.github.io';
 const BRANCH = 'main';
-const REDIRECT_URI = 'https://belber.github.io/admin/';
 
 let accessToken = null;
 
-// === 页面初始化：检查 URL 中是否有 GitHub 返回的 token ===
+// === 页面初始化：从 sessionStorage 恢复 token ===
 (function init() {
-  var hash = location.hash;
-  if (hash && hash.includes('access_token=')) {
-    var params = new URLSearchParams(hash.replace('#', '?'));
-    accessToken = params.get('access_token');
-    if (accessToken) {
-      // 清除 URL 中的 token，防止泄露
-      history.replaceState(null, '', window.location.pathname);
-      document.getElementById('login-view').style.display = 'none';
-      document.getElementById('editor-view').style.display = 'block';
-      return;
-    }
+  var saved = sessionStorage.getItem('gh_token');
+  if (saved) {
+    accessToken = saved;
+    document.getElementById('login-view').style.display = 'none';
+    document.getElementById('editor-view').style.display = 'block';
   }
 })();
 
-// === 登录：跳转到 GitHub 授权页（Implicit Grant）===
-function startLogin() {
-  var authUrl = 'https://github.com/login/oauth/authorize'
-    + '?client_id=' + encodeURIComponent(CLIENT_ID)
-    + '&redirect_uri=' + encodeURIComponent(REDIRECT_URI)
-    + '&scope=repo'
-    + '&response_type=token';
-  window.location.href = authUrl;
+// === 登录：使用用户粘贴的 PAT ===
+function loginWithToken() {
+  var token = document.getElementById('token-input').value.trim();
+  if (!token) { showStatus('请输入 token', 'error'); return; }
+
+  // 验证 token 有效性
+  fetch('https://api.github.com/user', {
+    headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github.v3+json' }
+  })
+  .then(function(r) {
+    if (r.status === 401) throw new Error('Token 无效，请检查是否正确');
+    if (!r.ok) throw new Error('验证失败 (' + r.status + ')');
+    return r.json();
+  })
+  .then(function(user) {
+    accessToken = token;
+    sessionStorage.setItem('gh_token', token);
+    document.getElementById('login-view').style.display = 'none';
+    document.getElementById('editor-view').style.display = 'block';
+  })
+  .catch(function(err) {
+    showStatus(err.message, 'error');
+  });
 }
 
-function showError(msg) {
-  var s = document.getElementById('status');
-  s.textContent = msg;
-  s.className = 'status error';
+function logout() {
+  accessToken = null;
+  sessionStorage.removeItem('gh_token');
+  document.getElementById('editor-view').style.display = 'none';
+  document.getElementById('login-view').style.display = 'block';
 }
 
-function showSuccess(msg) {
+function showStatus(msg, type) {
   var s = document.getElementById('status');
   s.textContent = msg;
-  s.className = 'status success';
-}
-
-function showInfo(msg) {
-  var s = document.getElementById('status');
-  s.textContent = msg;
-  s.className = 'status info';
+  s.className = 'status ' + type;
 }
 
 // === 发布 ===
 function publish() {
   var title = document.getElementById('post-title').value.trim();
   var body = document.getElementById('post-body').value.trim();
-  if (!title) { showError('请输入标题'); return; }
-  if (!body) { showError('请输入正文'); return; }
+  if (!title) { showStatus('请输入标题', 'error'); return; }
+  if (!body) { showStatus('请输入正文', 'error'); return; }
 
   var btn = document.getElementById('publish-btn');
   btn.disabled = true;
   btn.textContent = '发布中...';
-  showInfo('正在发布...');
+  showStatus('正在发布...', 'info');
 
   var now = new Date();
   var pad = function(n) { return String(n).padStart(2, '0'); };
@@ -142,11 +161,11 @@ function publish() {
       branch: BRANCH
     })
   })
-  .then(r => r.json())
-  .then(result => {
+  .then(function(r) { return r.json(); })
+  .then(function(result) {
     if (result.message) throw new Error(result.message);
     btn.textContent = '✓ 已发布';
-    showSuccess('文章 "' + title + '" 已发布！博客将在 1-2 分钟后更新。');
+    showStatus('文章 "' + title + '" 已发布！博客将在 1-2 分钟后更新。', 'success');
     document.getElementById('post-title').value = '';
     document.getElementById('post-body').value = '';
     setTimeout(function() { btn.disabled = false; btn.textContent = '发布'; }, 3000);
@@ -154,7 +173,7 @@ function publish() {
   .catch(function(err) {
     btn.disabled = false;
     btn.textContent = '发布';
-    showError('发布失败：' + (err.message || '未知错误'));
+    showStatus('发布失败：' + (err.message || '未知错误'), 'error');
   });
 }
 </script>
