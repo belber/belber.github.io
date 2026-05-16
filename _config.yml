@@ -11,7 +11,8 @@ permalink: /diary/:year/:month/:day/:title/
 # 构建设置
 markdown: kramdown
 future: true
-# 不使用主题，完全自定义布局
+timezone: Asia/Shanghai
+theme: null       # 不使用主题，完全自定义布局
 
 # 插件
 plugins:
