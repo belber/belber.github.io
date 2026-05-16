@@ -352,6 +352,7 @@ function editPost(path, sha) {
   editingFile = null;
   document.getElementById('editor-title').textContent = '加载中...';
   document.getElementById('posts-view').style.display = 'none';
+  document.getElementById('image-browser').style.display = '';
   document.getElementById('editor-view').style.display = 'block';
 
   fetch('https://api.github.com/repos/' + REPO + '/contents/' + path, {
@@ -597,6 +598,10 @@ function toggleImageBrowser() {
 
 function loadImageBrowser() {
   var container = document.getElementById('image-browser-content');
+  container.onclick = function(e) {
+    var item = e.target.closest('.image-browser-item');
+    if (item) insertImage(item.dataset.filename);
+  };
   fetch('https://api.github.com/repos/' + REPO + '/contents/assets/images', {
     headers: { 'Authorization': 'Bearer ' + accessToken, 'Accept': 'application/vnd.github.v3+json' }
   })
@@ -615,7 +620,9 @@ function loadImageBrowser() {
     var html = '';
     files.slice(0, 50).forEach(function(f) {
       if (f.type !== 'file') return;
-      html += '<div class="image-browser-item" title="' + f.name + '" onclick="insertImage(\'' + f.name + '\')">';
+      html += '<div class="image-browser-item" data-filename="' + f.name.replace(/"/g, '&quot;') + '" title="' + f.name.replace(/"/g, '&quot;') + '">';
+	      html += '  <img src="https://raw.githubusercontent.com/' + REPO + '/main/assets/images/' + encodeURI(f.name) + '" alt="' + f.name.replace(/"/g, '&quot;') + '" loading="lazy">';
+	      html += '</div>';
       html += '  <img src="https://raw.githubusercontent.com/' + REPO + '/main/assets/images/' + f.name + '" alt="' + f.name + '" loading="lazy">';
       html += '</div>';
     });
