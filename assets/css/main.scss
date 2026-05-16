@@ -339,6 +339,31 @@ a {
   margin-bottom: 24px;
 }
 
+.post-article-accent {
+  width: 40px;
+  height: 3px;
+  background: $primary;
+  border-radius: 2px;
+  margin-bottom: 16px;
+}
+
+.post-article-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.post-article-eta {
+  font-size: 12px;
+  color: $text-muted;
+
+  &:not(:empty)::before {
+    content: '·';
+    margin-right: 8px;
+  }
+}
+
 .post-article-title {
   font-size: 28px;
   font-weight: 600;
@@ -350,8 +375,6 @@ a {
 .post-article-date {
   font-size: 13px;
   color: $primary;
-  display: block;
-  margin-top: 4px;
 }
 
 .post-article-content {

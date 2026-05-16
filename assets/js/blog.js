@@ -153,6 +153,14 @@
         var article = doc.querySelector('.post-article');
         if (article) {
           postDisplayEl.innerHTML = article.outerHTML;
+          // 计算阅读时长
+          var contentEl = postDisplayEl.querySelector('.post-article-content');
+          var etaEl = postDisplayEl.querySelector('.post-article-eta');
+          if (contentEl && etaEl) {
+            var text = contentEl.textContent.replace(/\s+/g, '');
+            var minutes = Math.max(1, Math.ceil(text.length / 300));
+            etaEl.textContent = minutes + ' 分钟';
+          }
           // 过渡动画
           postDisplayEl.style.animation = 'none';
           postDisplayEl.offsetHeight; // 触发回流

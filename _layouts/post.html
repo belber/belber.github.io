@@ -3,10 +3,14 @@ layout: default
 ---
 <article class="post-article">
   <header class="post-article-header">
+    <div class="post-article-accent"></div>
     <h1 class="post-article-title">{{ page.title }}</h1>
-    <time class="post-article-date" datetime="{{ page.date | date_to_xmlschema }}">
-      {{ page.date | date: "%B %-d, %Y" }}
-    </time>
+    <div class="post-article-meta">
+      <time class="post-article-date" datetime="{{ page.date | date_to_xmlschema }}">
+        {{ page.date | date: "%B %-d, %Y" }}
+      </time>
+      <span class="post-article-eta"></span>
+    </div>
   </header>
   <div class="post-article-content">
     {{ content }}
