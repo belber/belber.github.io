@@ -278,7 +278,7 @@ function loadPosts() {
   var list = document.getElementById('posts-list');
   list.innerHTML = '<div class="empty-state">加载中...</div>';
 
-  fetch('https://api.github.com/repos/' + REPO + '/contents/_posts', {
+  fetch('https://api.github.com/repos/' + REPO + '/contents/_posts?_=' + Date.now(), {
     headers: { 'Authorization': 'Bearer ' + accessToken, 'Accept': 'application/vnd.github.v3+json' }
   })
   .then(function(r) {
@@ -304,7 +304,6 @@ function loadPosts() {
     });
 
     var sorted = Object.keys(groups).sort().reverse();
-    // 最新月份展开，其余折叠
     var expandedKey = sorted[0];
 
     var html = '';
@@ -324,11 +323,11 @@ function loadPosts() {
         html += '<div class="post-row">';
         html += '  <div class="post-info">';
         html += '    <div class="post-date">' + datePart + '</div>';
-        html += '    <div class="post-name">' + namePart + '</div>';
+        html += '    <div class="post-name">' + escapeHtml(namePart) + '</div>';
         html += '  </div>';
         html += '  <div class="post-actions">';
-        html += '    <button class="btn btn-outline btn-sm" onclick="editPost(\'' + f.path + '\',\'' + f.sha + '\')">编辑</button>';
-        html += '    <button class="btn btn-danger btn-sm" onclick="confirmDelete(\'' + namePart + '\',\'' + f.path + '\',\'' + f.sha + '\')">删除</button>';
+        html += '    <button class="btn btn-outline btn-sm admin-edit-btn" data-path="' + escapeAttr(f.path) + '" data-sha="' + escapeAttr(f.sha) + '">编辑</button>';
+        html += '    <button class="btn btn-danger btn-sm admin-delete-btn" data-name="' + escapeAttr(namePart) + '" data-path="' + escapeAttr(f.path) + '" data-sha="' + escapeAttr(f.sha) + '">删除</button>';
         html += '  </div>';
         html += '</div>';
       });
@@ -340,6 +339,14 @@ function loadPosts() {
   .catch(function(err) {
     list.innerHTML = '<div class="empty-state">加载失败：' + err.message + '</div>';
   });
+}
+
+function escapeAttr(str) {
+  return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 function toggleAdminMonth(header) {
@@ -356,6 +363,19 @@ function toggleAdminMonth(header) {
     group.classList.remove('expanded');
   }
 }
+
+// 事件委托：编辑 / 删除按钮
+document.getElementById('posts-list').addEventListener('click', function(e) {
+  var btn = e.target.closest('.admin-edit-btn');
+  if (btn) {
+    editPost(btn.dataset.path, btn.dataset.sha);
+    return;
+  }
+  btn = e.target.closest('.admin-delete-btn');
+  if (btn) {
+    confirmDelete(btn.dataset.name, btn.dataset.path, btn.dataset.sha);
+  }
+});
 
 // === 编辑文章 ===
 function editPost(path, sha) {
@@ -420,17 +440,79 @@ function doDelete() {
   pendingDelete = null;
   closeConfirm();
 
-  fetch('https://api.github.com/repos/' + REPO + '/contents/' + d.path, {
-    method: 'DELETE',
-    headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' },
-    body: JSON.stringify({
-      message: 'delete: ' + d.path,
-      sha: d.sha,
-      branch: BRANCH
-    })
+  // 先读取文章内容，找出引用的图片
+  fetch('https://api.github.com/repos/' + REPO + '/contents/' + d.path + '?_=' + Date.now(), {
+    headers: { 'Authorization': 'Bearer ' + accessToken, 'Accept': 'application/vnd.github.v3+json' }
   })
   .then(function(r) {
-    if (!r.ok) throw new Error('删除失败');
+    if (!r.ok) throw new Error('获取文章内容失败');
+    return r.json();
+  })
+  .then(function(data) {
+    var raw = decodeURIComponent(escape(atob(data.content)));
+    var imgRegex = /!\[\]\(\/assets\/images\/([^)]+)\)/g;
+    var images = [];
+    var m;
+    while ((m = imgRegex.exec(raw)) !== null) {
+      images.push(m[1]);
+    }
+    return images;
+  })
+  .then(function(imagesToDelete) {
+    // 删除文章
+    return fetch('https://api.github.com/repos/' + REPO + '/contents/' + d.path, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' },
+      body: JSON.stringify({
+        message: 'delete: ' + d.path,
+        sha: d.sha,
+        branch: BRANCH
+      })
+    }).then(function(r) {
+      if (!r.ok) {
+        return r.json().then(function(errData) {
+          throw new Error(errData.message || '删除文章失败 (' + r.status + ')');
+        }).catch(function(parseErr) {
+          throw new Error(parseErr.message || '删除文章失败 (' + r.status + ')');
+        });
+      }
+      return imagesToDelete;
+    });
+  })
+  .then(function(imagesToDelete) {
+    if (imagesToDelete.length === 0) return;
+    // 获取每个图片的 SHA，然后删除
+    var deletePromises = imagesToDelete.map(function(filename) {
+      var imgPath = 'assets/images/' + encodeURI(filename);
+      return fetch('https://api.github.com/repos/' + REPO + '/contents/' + imgPath + '?_=' + Date.now(), {
+        headers: { 'Authorization': 'Bearer ' + accessToken, 'Accept': 'application/vnd.github.v3+json' }
+      })
+      .then(function(r) {
+        if (r.status === 404) return null;
+        if (!r.ok) return null;
+        return r.json();
+      })
+      .then(function(imgData) {
+        if (!imgData || !imgData.sha) return;
+        return fetch('https://api.github.com/repos/' + REPO + '/contents/' + imgPath, {
+          method: 'DELETE',
+          headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' },
+          body: JSON.stringify({
+            message: 'delete: ' + filename,
+            sha: imgData.sha,
+            branch: BRANCH
+          })
+        });
+      })
+      .catch(function() { /* 单个图片删除失败不阻塞整体流程 */ });
+    });
+    return Promise.all(deletePromises);
+  })
+  .then(function() {
+    // 等 GitHub API 缓存刷新后再重新加载
+    return new Promise(function(resolve) { setTimeout(resolve, 500); });
+  })
+  .then(function() {
     loadPosts();
   })
   .catch(function(err) {
