@@ -121,7 +121,7 @@
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn btn-primary" id="publish-btn" onclick="publish()">发布</button>
       <button class="btn btn-outline btn-sm" id="upload-btn" onclick="document.getElementById('file-input').click()">上传图片</button>
-      <input type="file" id="file-input" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none">
+      <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp" style="display:none">
       <button class="btn btn-outline btn-sm" id="cancel-edit-btn" onclick="cancelEdit()" style="display:none">取消编辑</button>
     </div>
     <div id="status" class="status"></div>
@@ -506,6 +506,8 @@ document.getElementById('file-input').addEventListener('change', function(e) {
       canvas.width = w;
       canvas.height = h;
       var ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, w, h);
       ctx.drawImage(img, 0, 0, w, h);
       var quality = 0.85;
       var dataUrl = canvas.toDataURL('image/jpeg', quality);
@@ -525,7 +527,7 @@ document.getElementById('file-input').addEventListener('change', function(e) {
         method: 'PUT',
         headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' },
         body: JSON.stringify({
-          message: 'upload: ' + filename,
+          message: 'feat: upload ' + filename,
           content: dataUrl.split(',')[1],
           branch: BRANCH
         })
@@ -546,6 +548,11 @@ document.getElementById('file-input').addEventListener('change', function(e) {
         btn.disabled = false;
         btn.textContent = '上传图片';
       });
+    };
+    img.onerror = function() {
+      alert('图片格式无效，请选择有效的图片文件');
+      btn.disabled = false;
+      btn.textContent = '上传图片';
     };
     img.src = ev.target.result;
   };
