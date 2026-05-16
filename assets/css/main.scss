@@ -54,6 +54,7 @@ a {
   flex-direction: column;
   background: $page-bg;
   overflow: hidden;
+  transition: width 0.2s ease, transform 0.25s ease;
 }
 
 .sidebar-header {
@@ -68,7 +69,62 @@ a {
   }
 }
 
-// === 月份导航 ===
+.sidebar-header-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidebar-logo {
+  flex-shrink: 0;
+}
+
+.sidebar-toggle {
+  margin-left: auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: $text-muted;
+  cursor: pointer;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+
+  &:hover {
+    background: $light-bg;
+    color: $accent;
+  }
+}
+
+// === 侧栏折叠/展开 ===
+#sidebar.collapsed {
+  width: 48px;
+  min-width: 48px;
+
+  .site-title { display: none; }
+  .sidebar-logo { width: 28px; height: 28px; }
+  #month-nav { display: none; }
+  .post-list { display: none; }
+  .sidebar-header-row { justify-content: center; }
+  .sidebar-toggle { margin-left: 0; }
+}
+
+// === 手机端侧栏（覆盖层） ===
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.3);
+  z-index: 98;
+}
+
+.sidebar-overlay.active {
+  display: block;
+}
 .month-nav {
   display: flex;
   gap: 4px;
@@ -275,34 +331,63 @@ a {
   }
 }
 
-// === 移动端 ===
-@media (max-width: 768px) {
+// === 手机端 ===
+@media (max-width: 767px) {
   #app {
     flex-direction: column;
   }
 
   #sidebar {
-    width: 100%;
-    min-width: 0;
-    height: 50vh;
-    border-right: none;
-    border-bottom: 1px solid $border;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 300px;
+    min-width: 300px;
+    z-index: 99;
+    transform: translateX(-100%);
+    border-right: 1px solid $border;
+    transition: transform 0.25s ease;
+  }
+
+  #sidebar.open {
+    transform: translateX(0);
   }
 
   #content {
-    height: 50vh;
+    height: 100vh;
     padding: 20px;
+  }
+
+  .mobile-menu-btn {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 100;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid $border;
+    background: #fff;
+    color: $text;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
   }
 }
 
-// === 小屏特殊处理 ===
+// === 小屏 ===
 @media (max-width: 480px) {
   #sidebar {
-    height: 45vh;
+    width: 260px;
+    min-width: 260px;
   }
 
   #content {
-    height: 55vh;
+    height: 100vh;
     padding: 16px;
   }
 
