@@ -163,21 +163,22 @@
   function toggleSidebar() {
     var sidebar = document.getElementById('sidebar');
     var overlay = document.getElementById('sidebar-overlay');
+    if (!sidebar) return;
     if (window.innerWidth < 768) {
       sidebar.classList.toggle('open');
-      overlay.classList.toggle('active');
+      if (overlay) overlay.classList.toggle('active');
     } else {
       sidebar.classList.toggle('collapsed');
       var btn = document.getElementById('sidebar-toggle');
-      btn.textContent = sidebar.classList.contains('collapsed') ? '▶' : '◀';
+      if (btn) btn.textContent = sidebar.classList.contains('collapsed') ? '▶' : '◀';
     }
   }
 
   function closeSidebar() {
     var sidebar = document.getElementById('sidebar');
     var overlay = document.getElementById('sidebar-overlay');
-    sidebar.classList.remove('open');
-    overlay.classList.remove('active');
+    if (sidebar) sidebar.classList.remove('open');
+    if (overlay) overlay.classList.remove('active');
   }
 
   // === 初始化 ===
