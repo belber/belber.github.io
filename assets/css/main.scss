@@ -392,6 +392,9 @@ a {
     transform: translateX(0);
   }
 
+  // 手机端不需要侧栏内的折叠按钮（由汉堡按钮控制）
+  .sidebar-toggle { display: none; }
+
   #content {
     height: 100vh;
     padding: 20px;
@@ -414,6 +417,8 @@ a {
     align-items: center;
     justify-content: center;
     box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+
+    &.hidden { display: none; }
   }
 }
 
