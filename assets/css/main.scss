@@ -125,6 +125,7 @@ a {
 .sidebar-overlay.active {
   display: block;
 }
+
 .month-nav {
   display: flex;
   gap: 4px;
@@ -174,22 +175,59 @@ a {
   }
 }
 
-.date-group {
-  margin-bottom: 4px;
+// === 按月分组 ===
+.month-group {
+  margin: 0 8px;
+  border-radius: 8px;
+  overflow: hidden;
+
+  &.expanded {
+    background: darken($page-bg, 0.5%);
+  }
 }
 
-.date-header {
-  font-size: 11px;
-  font-weight: 600;
+.month-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  cursor: pointer;
+  user-select: none;
+  border-radius: 8px;
+  transition: background 0.15s;
+
+  &:hover {
+    background: $light-bg;
+  }
+}
+
+.month-toggle-icon {
+  font-size: 10px;
   color: $primary;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  padding: 12px 20px 4px;
+  width: 16px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.month-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: $text;
+}
+
+.month-count {
+  font-size: 11px;
+  color: $text-muted;
+  font-weight: 400;
+}
+
+.month-posts {
+  padding-bottom: 4px;
 }
 
 .post-item {
   display: block;
-  padding: 8px 16px 8px 20px;
+  padding: 6px 16px 6px 32px;
   margin: 1px 8px;
   border-radius: 8px;
   cursor: pointer;
