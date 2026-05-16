@@ -2,10 +2,10 @@
 ---
 
 // === 配色 ===
-$primary:       #a594dd;
-$light-bg:      #f8f4fc;
-$page-bg:       #eff0fa;
-$accent:        #6b5cb5;
+$primary:       #9b87d5;
+$light-bg:      #f6f2fc;
+$page-bg:       #f4f0fa;
+$accent:        #7c6bc4;
 $text:          #2b2b2b;
 $text-muted:    #8888aa;
 $border:        #dcd5e8;
@@ -29,6 +29,8 @@ body {
   line-height: 1.8;
   color: $text;
   background: $page-bg;
+  background-image: radial-gradient(circle, #dcd5e8 0.5px, transparent 0.5px);
+  background-size: 20px 20px;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -323,19 +325,67 @@ a {
   }
 }
 
-.welcome-message {
-  text-align: center;
-  padding: 80px 20px;
-  color: $text-muted;
+// === 欢迎区 ===
+.welcome-area {
+  animation: fadeIn 0.3s ease;
+}
 
-  h2 {
-    font-size: 18px;
+.welcome-hero {
+  background: linear-gradient(135deg, #e8e0f5 0%, #c4b8e0 40%, #b8aee0 65%, #d4cce8 100%);
+  border-radius: 16px;
+  padding: 60px 40px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.welcome-quote {
+  font-size: 20px;
+  line-height: 1.9;
+  color: $text;
+  position: relative;
+  z-index: 1;
+  margin: 0;
+
+  cite {
+    display: block;
+    margin-top: 16px;
+    font-size: 13px;
+    color: $text-muted;
+    font-style: normal;
     font-weight: 400;
-    color: $text;
-    margin-bottom: 8px;
+  }
+}
+
+// === 统计卡片 ===
+.welcome-stats {
+  display: flex;
+  gap: 16px;
+}
+
+.stat-card {
+  flex: 1;
+  background: rgba(255,255,255,0.6);
+  backdrop-filter: blur(4px);
+  border-radius: 12px;
+  padding: 20px 16px;
+  text-align: center;
+
+  .stat-number {
+    display: block;
+    font-size: 28px;
+    font-weight: 600;
+    color: $accent;
+    line-height: 1.2;
   }
 
-  p { font-size: 14px; }
+  .stat-label {
+    display: block;
+    font-size: 12px;
+    color: $text-muted;
+    margin-top: 4px;
+  }
 }
 
 // === 文章内容样式 ===

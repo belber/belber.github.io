@@ -35,9 +35,29 @@ layout: default
 
   <!-- 右栏：文章内容 -->
   <main id="content">
-    <div id="welcome-message" class="welcome-message">
-      <h2>{{ site.description }}</h2>
-      <p>从左侧选择一篇文章开始阅读</p>
+    <div id="welcome-area" class="welcome-area">
+      <div class="welcome-hero">
+        <blockquote class="welcome-quote">
+          "人生大部分时间都是在寻找，<br>
+          寻找喜欢做的事情，<br>
+          寻找需要做的事情"
+          <cite>—— belber</cite>
+        </blockquote>
+      </div>
+      <div class="welcome-stats">
+        <div class="stat-card">
+          <span class="stat-number" id="stat-posts">0</span>
+          <span class="stat-label">全部文章</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-number" id="stat-words">0</span>
+          <span class="stat-label">本月写作</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-number" id="stat-days">0</span>
+          <span class="stat-label">运行天数</span>
+        </div>
+      </div>
     </div>
     <div id="post-display" class="post-display" style="display:none;">
       <!-- JS 加载的文章内容将放在这里 -->
@@ -53,8 +73,33 @@ layout: default
       "title": {{ post.title | jsonify }},
       "date": "{{ post.date | date_to_xmlschema }}",
       "url": "{{ post.url | relative_url }}",
-      "excerpt": {{ post.excerpt | strip_html | truncate: 80 | jsonify }}
+      "excerpt": {{ post.excerpt | strip_html | truncate: 80 | jsonify }},
+      "char_count": {{ post.content | strip_html | size }}
     }{% unless forloop.last %},{% endunless %}
     {% endfor %}
   ];
+
+  // 首页统计
+  (function calcStats() {
+    var posts = window.__POSTS_DATA__ || [];
+    document.getElementById('stat-posts').textContent = posts.length;
+
+    var now = new Date();
+    var thisMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    var monthWords = 0;
+    posts.forEach(function(p) {
+      if (p.date && p.date.substring(0, 7) === thisMonth) {
+        monthWords += p.char_count || 0;
+      }
+    });
+    document.getElementById('stat-words').textContent = monthWords.toLocaleString();
+
+    if (posts.length > 0) {
+      var first = new Date(posts[posts.length - 1].date);
+      var days = Math.floor((now - first) / (1000 * 60 * 60 * 24)) + 1;
+      document.getElementById('stat-days').textContent = days;
+    } else {
+      document.getElementById('stat-days').textContent = 1;
+    }
+  })();
 </script>
