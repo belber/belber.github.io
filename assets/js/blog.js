@@ -281,7 +281,11 @@
       overlay.onclick = closeLightbox;
       document.body.appendChild(overlay);
     }
-    overlay.innerHTML = '<img src="' + src + '" alt="">';
+    overlay.innerHTML = '';
+    var img = document.createElement('img');
+    img.setAttribute('src', src);
+    img.setAttribute('alt', '');
+    overlay.appendChild(img);
     overlay.classList.add('active');
     document.body.style.overflow = 'hidden';
   }
