@@ -100,6 +100,30 @@ a {
   }
 }
 
+.sidebar-footer {
+  margin-top: auto;
+  padding: 10px 16px;
+  border-top: 1px solid $border;
+
+  .admin-gear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    color: $text-muted;
+    text-decoration: none;
+    font-size: 16px;
+    border-radius: 6px;
+    transition: background 0.15s;
+
+    &:hover {
+      background: $light-bg;
+      color: $accent;
+    }
+  }
+}
+
 // === 侧栏折叠/展开 ===
 #sidebar.collapsed {
   width: 48px;
@@ -111,6 +135,12 @@ a {
   .post-list { display: none; }
   .sidebar-header-row { justify-content: center; }
   .sidebar-toggle { margin-left: 0; }
+
+  .sidebar-footer {
+    padding: 10px 0;
+    border-top: none;
+    text-align: center;
+  }
 }
 
 // === 手机端侧栏（覆盖层） ===
