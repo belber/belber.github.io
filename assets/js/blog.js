@@ -161,6 +161,44 @@
             var minutes = Math.max(1, Math.ceil(text.length / 300));
             etaEl.textContent = minutes + ' 分钟';
           }
+          // 上下篇导航
+          var articleEl = postDisplayEl.querySelector('.post-article');
+          var currentUrl = url.replace(/\/$/, '');
+          var idx = -1;
+          for (var i = 0; i < posts.length; i++) {
+            if (posts[i].url.replace(/\/$/, '') === currentUrl) { idx = i; break; }
+          }
+          if (articleEl && idx !== -1) {
+            var navHtml = '<nav class="post-nav">';
+            if (idx < posts.length - 1) {
+              var prev = posts[idx + 1];
+              navHtml += '<a class="post-nav-link post-nav-prev" href="' + prev.url + '"><span class="post-nav-dir">← 上一篇</span><span class="post-nav-title">' + prev.title + '</span></a>';
+            } else {
+              navHtml += '<span class="post-nav-link post-nav-prev post-nav-disabled"></span>';
+            }
+            if (idx > 0) {
+              var next = posts[idx - 1];
+              navHtml += '<a class="post-nav-link post-nav-next" href="' + next.url + '"><span class="post-nav-dir">下一篇 →</span><span class="post-nav-title">' + next.title + '</span></a>';
+            } else {
+              navHtml += '<span class="post-nav-link post-nav-next post-nav-disabled"></span>';
+            }
+            navHtml += '</nav>';
+            articleEl.insertAdjacentHTML('beforeend', navHtml);
+            // 给 nav 内的链接绑定点击事件
+            articleEl.querySelectorAll('.post-nav a').forEach(function(link) {
+              link.addEventListener('click', function(e) {
+                e.preventDefault();
+                var targetUrl = this.getAttribute('href');
+                var items = postListEl.querySelectorAll('.post-item');
+                for (var j = 0; j < items.length; j++) {
+                  if (items[j].dataset.url === targetUrl) {
+                    loadPost(targetUrl, items[j]);
+                    break;
+                  }
+                }
+              });
+            });
+          }
           // 过渡动画
           postDisplayEl.style.animation = 'none';
           postDisplayEl.offsetHeight; // 触发回流
