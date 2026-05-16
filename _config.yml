@@ -1,0 +1,27 @@
+title: "Belber's Diary"
+email:
+description: "Notes, days, and small pieces of a life in progress."
+baseurl: ""
+url: "https://belber.github.io"
+author: belber
+
+# 文章链接格式
+permalink: /diary/:year/:month/:day/:title/
+
+# 构建设置
+markdown: kramdown
+future: true
+# 不使用主题，完全自定义布局
+
+# 插件
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+
+# 排除文件
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - README.md
+  - .gitignore
+  - vendor

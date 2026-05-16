@@ -1,0 +1,47 @@
+---
+layout: default
+---
+
+<div id="app">
+  <!-- 左栏：文章列表 -->
+  <aside id="sidebar">
+    <div class="sidebar-header">
+      <h1 class="site-title"><a href="/">{{ site.title }}</a></h1>
+    </div>
+
+    <!-- 月份导航 -->
+    <nav id="month-nav" class="month-nav">
+      <!-- JS 动态渲染 -->
+    </nav>
+
+    <!-- 文章列表 -->
+    <div id="post-list" class="post-list">
+      <!-- JS 按日期分组渲染 -->
+    </div>
+  </aside>
+
+  <!-- 右栏：文章内容 -->
+  <main id="content">
+    <div id="welcome-message" class="welcome-message">
+      <h2>{{ site.description }}</h2>
+      <p>从左侧选择一篇文章开始阅读</p>
+    </div>
+    <div id="post-display" class="post-display" style="display:none;">
+      <!-- JS 加载的文章内容将放在这里 -->
+    </div>
+  </main>
+</div>
+
+<script>
+  // 将文章数据作为 JSON 嵌入页面，供 JS 使用
+  window.__POSTS_DATA__ = [
+    {% for post in site.posts %}
+    {
+      "title": {{ post.title | jsonify }},
+      "date": "{{ post.date | date_to_xmlschema }}",
+      "url": "{{ post.url | relative_url }}",
+      "excerpt": {{ post.excerpt | strip_html | truncate: 80 | jsonify }}
+    }{% unless forloop.last %},{% endunless %}
+    {% endfor %}
+  ];
+</script>
