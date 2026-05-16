@@ -52,6 +52,11 @@
 
   function renderMonthNav(posts) {
     var months = getMonths(posts);
+    if (months.length === 0) {
+      monthNavEl.innerHTML = '<span class="year-selector" style="cursor:default">' + new Date().getFullYear() + ' <span class="year-arrow">▼</span></span>';
+      postListEl.innerHTML = '<div style="padding:32px 16px;text-align:center;color:#8888aa;font-size:13px;">还没有文章</div>';
+      return;
+    }
     var years = [];
     months.forEach(function(m) {
       if (years.indexOf(m.year) === -1) years.push(m.year);
