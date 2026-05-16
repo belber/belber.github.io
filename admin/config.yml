@@ -3,6 +3,7 @@ backend:
   repo: belber/belber.github.io
   branch: main
   auth_type: pkce
+  app_id: Ov23li8hGMXyMY4f5nBA
 
 publish_mode: editorial_workflow
 media_folder: "assets/images"
