@@ -39,6 +39,31 @@
     .token-input-wrap input { width: 340px; max-width: 100%; }
     .help-text { font-size: 12px; color: #999; margin-top: 16px; line-height: 1.6; }
     .help-text a { color: #a594dd; }
+    .posts-view { display: none; }
+    .posts-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .posts-toolbar h1 { margin-bottom: 0; }
+    .posts-list-admin { display: flex; flex-direction: column; gap: 6px; }
+    .post-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border: 1px solid #e8e0f0; border-radius: 8px; transition: background 0.15s; }
+    .post-row:hover { background: #f8f4fc; }
+    .post-row .post-info { flex: 1; min-width: 0; }
+    .post-row .post-date { font-size: 12px; color: #999; }
+    .post-row .post-name { font-size: 14px; color: #2b2b2b; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .post-row .post-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .post-row .post-actions button { padding: 6px 14px; font-size: 13px; }
+    .btn-danger { background: #e57373; color: #fff; }
+    .btn-danger:hover { opacity: 0.9; }
+    .btn-sm { padding: 6px 14px; font-size: 13px; }
+    .nav-tabs { display: flex; gap: 4px; margin-bottom: 24px; border-bottom: 1px solid #e8e0f0; padding-bottom: 0; }
+    .nav-tab { padding: 8px 18px; border: none; background: transparent; color: #999; font-size: 14px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.15s, border-color 0.15s; }
+    .nav-tab:hover { color: #2b2b2b; }
+    .nav-tab.active { color: #a594dd; border-bottom-color: #a594dd; font-weight: 500; }
+    .empty-state { text-align: center; padding: 60px 20px; color: #999; font-size: 14px; }
+    .confirm-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 200; align-items: center; justify-content: center; }
+    .confirm-overlay.active { display: flex; }
+    .confirm-box { background: #fff; border-radius: 12px; padding: 24px; max-width: 380px; width: 90%; box-shadow: 0 4px 24px rgba(0,0,0,0.12); }
+    .confirm-box h3 { font-size: 16px; margin-bottom: 8px; color: #2b2b2b; }
+    .confirm-box p { font-size: 14px; color: #666; margin-bottom: 20px; line-height: 1.5; }
+    .confirm-box .confirm-actions { display: flex; gap: 8px; justify-content: flex-end; }
   </style>
 </head>
 <body>
@@ -64,7 +89,11 @@
 
   <!-- 编辑器 -->
   <div id="editor-view" class="editor-area">
-    <h1>写文章</h1>
+    <div class="nav-tabs">
+      <button class="nav-tab" onclick="showPosts()">管理文章</button>
+      <button class="nav-tab active" onclick="">写新文章</button>
+    </div>
+    <h1 id="editor-title">写文章</h1>
     <div class="form-group">
       <label>标题</label>
       <input type="text" id="post-title" placeholder="今天想写点什么？" autocomplete="off">
@@ -73,11 +102,39 @@
       <label>正文（支持 Markdown）</label>
       <textarea id="post-body" placeholder="用 Markdown 写下你的想法..."></textarea>
     </div>
-    <div style="display:flex;gap:8px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn btn-primary" id="publish-btn" onclick="publish()">发布</button>
+      <button class="btn btn-outline btn-sm" id="cancel-edit-btn" onclick="cancelEdit()" style="display:none">取消编辑</button>
       <button class="btn btn-outline" onclick="logout()">切换账号</button>
     </div>
     <div id="status" class="status"></div>
+  </div>
+
+  <!-- 文章管理 -->
+  <div id="posts-view" class="posts-view">
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="">管理文章</button>
+      <button class="nav-tab" onclick="showEditor()">写新文章</button>
+    </div>
+    <div class="posts-toolbar">
+      <h1>文章管理</h1>
+      <button class="btn btn-primary btn-sm" onclick="showEditor()">写新文章</button>
+    </div>
+    <div id="posts-list" class="posts-list-admin">
+      <div class="empty-state">加载中...</div>
+    </div>
+  </div>
+</div>
+
+<!-- 删除确认弹窗 -->
+<div id="confirm-overlay" class="confirm-overlay">
+  <div class="confirm-box">
+    <h3>确认删除</h3>
+    <p id="confirm-text">确定要删除这篇文章吗？此操作不可恢复。</p>
+    <div class="confirm-actions">
+      <button class="btn btn-outline btn-sm" onclick="closeConfirm()">取消</button>
+      <button class="btn btn-danger btn-sm" id="confirm-delete-btn">删除</button>
+    </div>
   </div>
 </div>
 
@@ -86,6 +143,7 @@ const REPO = 'belber/belber.github.io';
 const BRANCH = 'main';
 
 let accessToken = null;
+let editingFile = null; // { path, sha } when editing existing post
 
 // === 页面初始化：从 sessionStorage 恢复 token ===
 (function init() {
@@ -93,16 +151,16 @@ let accessToken = null;
   if (saved) {
     accessToken = saved;
     document.getElementById('login-view').style.display = 'none';
-    document.getElementById('editor-view').style.display = 'block';
+    document.getElementById('posts-view').style.display = 'block';
+    loadPosts();
   }
 })();
 
-// === 登录：使用用户粘贴的 PAT ===
+// === 登录 ===
 function loginWithToken() {
   var token = document.getElementById('token-input').value.trim();
   if (!token) { showStatus('请输入 token', 'error'); return; }
 
-  // 验证 token 有效性
   fetch('https://api.github.com/user', {
     headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github.v3+json' }
   })
@@ -111,11 +169,12 @@ function loginWithToken() {
     if (!r.ok) throw new Error('验证失败 (' + r.status + ')');
     return r.json();
   })
-  .then(function(user) {
+  .then(function() {
     accessToken = token;
     sessionStorage.setItem('gh_token', token);
     document.getElementById('login-view').style.display = 'none';
-    document.getElementById('editor-view').style.display = 'block';
+    document.getElementById('posts-view').style.display = 'block';
+    loadPosts();
   })
   .catch(function(err) {
     showStatus(err.message, 'error');
@@ -124,7 +183,9 @@ function loginWithToken() {
 
 function logout() {
   accessToken = null;
+  editingFile = null;
   sessionStorage.removeItem('gh_token');
+  document.getElementById('posts-view').style.display = 'none';
   document.getElementById('editor-view').style.display = 'none';
   document.getElementById('login-view').style.display = 'block';
 }
@@ -135,7 +196,153 @@ function showStatus(msg, type) {
   s.className = 'status ' + type;
 }
 
-// === 发布 ===
+// === 视图切换 ===
+function showPosts() {
+  document.getElementById('editor-view').style.display = 'none';
+  document.getElementById('posts-view').style.display = 'block';
+  loadPosts();
+}
+
+function showEditor() {
+  editingFile = null;
+  document.getElementById('editor-title').textContent = '写文章';
+  document.getElementById('publish-btn').textContent = '发布';
+  document.getElementById('cancel-edit-btn').style.display = 'none';
+  document.getElementById('post-title').value = '';
+  document.getElementById('post-body').value = '';
+  document.getElementById('status').className = 'status';
+  document.getElementById('status').style.display = 'none';
+  document.getElementById('posts-view').style.display = 'none';
+  document.getElementById('editor-view').style.display = 'block';
+}
+
+function cancelEdit() {
+  showPosts();
+}
+
+// === 加载文章列表 ===
+function loadPosts() {
+  var list = document.getElementById('posts-list');
+  list.innerHTML = '<div class="empty-state">加载中...</div>';
+
+  fetch('https://api.github.com/repos/' + REPO + '/contents/_posts', {
+    headers: { 'Authorization': 'Bearer ' + accessToken, 'Accept': 'application/vnd.github.v3+json' }
+  })
+  .then(function(r) {
+    if (!r.ok) throw new Error('获取文章列表失败');
+    return r.json();
+  })
+  .then(function(files) {
+    if (!files || !files.length) {
+      list.innerHTML = '<div class="empty-state">还没有文章</div>';
+      return;
+    }
+    // 按文件名倒序（最新的在前）
+    files.sort(function(a, b) { return b.name.localeCompare(a.name); });
+    var html = '';
+    files.forEach(function(f) {
+      if (f.type !== 'file') return;
+      var datePart = f.name.substring(0, 10);
+      var namePart = f.name.substring(11).replace(/\.md$/, '').replace(/-/g, ' ');
+      html += '<div class="post-row">';
+      html += '  <div class="post-info">';
+      html += '    <div class="post-date">' + datePart + '</div>';
+      html += '    <div class="post-name">' + namePart + '</div>';
+      html += '  </div>';
+      html += '  <div class="post-actions">';
+      html += '    <button class="btn btn-outline btn-sm" onclick="editPost(\'' + f.path + '\',\'' + f.sha + '\')">编辑</button>';
+      html += '    <button class="btn btn-danger btn-sm" onclick="confirmDelete(\'' + namePart + '\',\'' + f.path + '\',\'' + f.sha + '\')">删除</button>';
+      html += '  </div>';
+      html += '</div>';
+    });
+    list.innerHTML = html;
+  })
+  .catch(function(err) {
+    list.innerHTML = '<div class="empty-state">加载失败：' + err.message + '</div>';
+  });
+}
+
+// === 编辑文章 ===
+function editPost(path, sha) {
+  editingFile = null;
+  document.getElementById('editor-title').textContent = '加载中...';
+  document.getElementById('posts-view').style.display = 'none';
+  document.getElementById('editor-view').style.display = 'block';
+
+  fetch('https://api.github.com/repos/' + REPO + '/contents/' + path, {
+    headers: { 'Authorization': 'Bearer ' + accessToken, 'Accept': 'application/vnd.github.v3+json' }
+  })
+  .then(function(r) {
+    if (!r.ok) throw new Error('加载文章失败');
+    return r.json();
+  })
+  .then(function(data) {
+    // 解码 base64 内容
+    var raw = decodeURIComponent(escape(atob(data.content)));
+    // 解析 front matter
+    var title = '';
+    var body = raw;
+    var match = raw.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
+    if (match) {
+      body = match[2].trim();
+      var fmMatch = match[1].match(/title:\s*"([^"]*)"/);
+      if (fmMatch) title = fmMatch[1];
+    }
+
+    editingFile = { path: path, sha: sha };
+    document.getElementById('editor-title').textContent = '编辑文章';
+    document.getElementById('publish-btn').textContent = '保存修改';
+    document.getElementById('cancel-edit-btn').style.display = 'inline-flex';
+    document.getElementById('post-title').value = title;
+    document.getElementById('post-body').value = body;
+    document.getElementById('status').className = 'status';
+    document.getElementById('status').style.display = 'none';
+  })
+  .catch(function(err) {
+    showStatus('加载失败：' + err.message, 'error');
+  });
+}
+
+// === 确认删除 ===
+var pendingDelete = null;
+
+function confirmDelete(name, path, sha) {
+  document.getElementById('confirm-text').textContent = '确定要删除 "' + name + '" 吗？此操作不可恢复。';
+  document.getElementById('confirm-overlay').classList.add('active');
+  pendingDelete = { path: path, sha: sha };
+  document.getElementById('confirm-delete-btn').onclick = doDelete;
+}
+
+function closeConfirm() {
+  document.getElementById('confirm-overlay').classList.remove('active');
+  pendingDelete = null;
+}
+
+function doDelete() {
+  if (!pendingDelete) return;
+  var d = pendingDelete;
+  pendingDelete = null;
+  closeConfirm();
+
+  fetch('https://api.github.com/repos/' + REPO + '/contents/' + d.path, {
+    method: 'DELETE',
+    headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' },
+    body: JSON.stringify({
+      message: 'delete: ' + d.path,
+      sha: d.sha,
+      branch: BRANCH
+    })
+  })
+  .then(function(r) {
+    if (!r.ok) throw new Error('删除失败');
+    loadPosts();
+  })
+  .catch(function(err) {
+    alert('删除失败：' + err.message);
+  });
+}
+
+// === 发布 / 保存 ===
 function publish() {
   var title = document.getElementById('post-title').value.trim();
   var body = document.getElementById('post-body').value.trim();
@@ -144,42 +351,73 @@ function publish() {
 
   var btn = document.getElementById('publish-btn');
   btn.disabled = true;
-  btn.textContent = '发布中...';
-  showStatus('正在发布...', 'info');
+  btn.textContent = editingFile ? '保存中...' : '发布中...';
+  showStatus('正在' + (editingFile ? '保存' : '发布') + '...', 'info');
 
   var now = new Date();
   var pad = function(n) { return String(n).padStart(2, '0'); };
   var dateStr = now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate());
   var timeStr = pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
-  var slug = title.toLowerCase().replace(/[^\w一-鿿]+/g, '-').replace(/^-|-$/g, '') || 'post';
-  var filename = '_posts/' + dateStr + '-' + slug + '.md';
   var tz = '+08:00';
-
   var frontMatter = '---\nlayout: post\ntitle: "' + title + '"\ndate: ' + dateStr + ' ' + timeStr + ' ' + tz + '\n---\n\n' + body;
 
-  fetch('https://api.github.com/repos/' + REPO + '/contents/' + filename, {
-    method: 'PUT',
-    headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' },
-    body: JSON.stringify({
-      message: 'feat: ' + title,
-      content: btoa(unescape(encodeURIComponent(frontMatter))),
-      branch: BRANCH
+  if (editingFile) {
+    // 更新已有文章
+    fetch('https://api.github.com/repos/' + REPO + '/contents/' + editingFile.path, {
+      method: 'PUT',
+      headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' },
+      body: JSON.stringify({
+        message: 'update: ' + title,
+        content: btoa(unescape(encodeURIComponent(frontMatter))),
+        sha: editingFile.sha,
+        branch: BRANCH
+      })
     })
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(result) {
-    if (result.message) throw new Error(result.message);
-    btn.textContent = '✓ 已发布';
-    showStatus('文章 "' + title + '" 已发布！博客将在 1-2 分钟后更新。', 'success');
-    document.getElementById('post-title').value = '';
-    document.getElementById('post-body').value = '';
-    setTimeout(function() { btn.disabled = false; btn.textContent = '发布'; }, 3000);
-  })
-  .catch(function(err) {
-    btn.disabled = false;
-    btn.textContent = '发布';
-    showStatus('发布失败：' + (err.message || '未知错误'), 'error');
-  });
+    .then(function(r) { return r.json(); })
+    .then(function(result) {
+      if (result.message) throw new Error(result.message);
+      editingFile = { path: editingFile.path, sha: result.content.sha };
+      btn.textContent = '✓ 已保存';
+      showStatus('文章 "' + title + '" 已更新！', 'success');
+      setTimeout(function() {
+        btn.disabled = false;
+        btn.textContent = '保存修改';
+      }, 2000);
+    })
+    .catch(function(err) {
+      btn.disabled = false;
+      btn.textContent = '保存修改';
+      showStatus('保存失败：' + (err.message || '未知错误'), 'error');
+    });
+  } else {
+    // 新建文章
+    var slug = title.toLowerCase().replace(/[^\w一-鿿]+/g, '-').replace(/^-|-$/g, '') || 'post';
+    var filename = '_posts/' + dateStr + '-' + slug + '.md';
+
+    fetch('https://api.github.com/repos/' + REPO + '/contents/' + filename, {
+      method: 'PUT',
+      headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' },
+      body: JSON.stringify({
+        message: 'feat: ' + title,
+        content: btoa(unescape(encodeURIComponent(frontMatter))),
+        branch: BRANCH
+      })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(result) {
+      if (result.message) throw new Error(result.message);
+      btn.textContent = '✓ 已发布';
+      showStatus('文章 "' + title + '" 已发布！', 'success');
+      document.getElementById('post-title').value = '';
+      document.getElementById('post-body').value = '';
+      setTimeout(function() { btn.disabled = false; btn.textContent = '发布'; }, 2000);
+    })
+    .catch(function(err) {
+      btn.disabled = false;
+      btn.textContent = '发布';
+      showStatus('发布失败：' + (err.message || '未知错误'), 'error');
+    });
+  }
 }
 </script>
 </body>
