@@ -2,14 +2,14 @@
 ---
 
 // === 配色 ===
-$primary:       #d4a373;
-$light-bg:      #faedcd;
-$page-bg:       #fefae0;
-$accent:        #ccd5ae;
+$primary:       #a594dd;
+$light-bg:      #f8f4fc;
+$page-bg:       #eff0fa;
+$accent:        #6b5cb5;
 $text:          #2b2b2b;
-$text-muted:    #999;
-$border:        #e0d5c0;
-$card-hover:    #f5efe0;
+$text-muted:    #8888aa;
+$border:        #dcd5e8;
+$card-hover:    #f0ecf8;
 
 // === 全局 ===
 *, *::before, *::after {
@@ -54,6 +54,7 @@ a {
   flex-direction: column;
   background: $page-bg;
   overflow: hidden;
+  transition: width 0.2s ease, transform 0.25s ease;
 }
 
 .sidebar-header {
@@ -68,7 +69,63 @@ a {
   }
 }
 
-// === 月份导航 ===
+.sidebar-header-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidebar-logo {
+  flex-shrink: 0;
+}
+
+.sidebar-toggle {
+  margin-left: auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: $text-muted;
+  cursor: pointer;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+
+  &:hover {
+    background: $light-bg;
+    color: $accent;
+  }
+}
+
+// === 侧栏折叠/展开 ===
+#sidebar.collapsed {
+  width: 48px;
+  min-width: 48px;
+
+  .site-title { display: none; }
+  .sidebar-logo { width: 28px; height: 28px; }
+  #month-nav { display: none; }
+  .post-list { display: none; }
+  .sidebar-header-row { justify-content: center; }
+  .sidebar-toggle { margin-left: 0; }
+}
+
+// === 手机端侧栏（覆盖层） ===
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.3);
+  z-index: 98;
+}
+
+.sidebar-overlay.active {
+  display: block;
+}
+
 .month-nav {
   display: flex;
   gap: 4px;
@@ -118,22 +175,59 @@ a {
   }
 }
 
-.date-group {
-  margin-bottom: 4px;
+// === 按月分组 ===
+.month-group {
+  margin: 0 8px;
+  border-radius: 8px;
+  overflow: hidden;
+
+  &.expanded {
+    background: darken($page-bg, 0.5%);
+  }
 }
 
-.date-header {
-  font-size: 11px;
-  font-weight: 600;
+.month-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  cursor: pointer;
+  user-select: none;
+  border-radius: 8px;
+  transition: background 0.15s;
+
+  &:hover {
+    background: $light-bg;
+  }
+}
+
+.month-toggle-icon {
+  font-size: 10px;
   color: $primary;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  padding: 12px 20px 4px;
+  width: 16px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.month-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: $text;
+}
+
+.month-count {
+  font-size: 11px;
+  color: $text-muted;
+  font-weight: 400;
+}
+
+.month-posts {
+  padding-bottom: 4px;
 }
 
 .post-item {
   display: block;
-  padding: 8px 16px 8px 20px;
+  padding: 6px 16px 6px 32px;
   margin: 1px 8px;
   border-radius: 8px;
   cursor: pointer;
@@ -170,7 +264,7 @@ a {
   flex: 1;
   overflow-y: auto;
   padding: 40px 48px;
-  background: #fff;
+  background: linear-gradient(135deg, #faf8fd 0%, #fff 50%);
 
   &::-webkit-scrollbar {
     width: 4px;
@@ -275,34 +369,63 @@ a {
   }
 }
 
-// === 移动端 ===
-@media (max-width: 768px) {
+// === 手机端 ===
+@media (max-width: 767px) {
   #app {
     flex-direction: column;
   }
 
   #sidebar {
-    width: 100%;
-    min-width: 0;
-    height: 50vh;
-    border-right: none;
-    border-bottom: 1px solid $border;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 300px;
+    min-width: 300px;
+    z-index: 99;
+    transform: translateX(-100%);
+    border-right: 1px solid $border;
+    transition: transform 0.25s ease;
+  }
+
+  #sidebar.open {
+    transform: translateX(0);
   }
 
   #content {
-    height: 50vh;
+    height: 100vh;
     padding: 20px;
+  }
+
+  .mobile-menu-btn {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 100;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid $border;
+    background: #fff;
+    color: $text;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
   }
 }
 
-// === 小屏特殊处理 ===
+// === 小屏 ===
 @media (max-width: 480px) {
   #sidebar {
-    height: 45vh;
+    width: 260px;
+    min-width: 260px;
   }
 
   #content {
-    height: 55vh;
+    height: 100vh;
     padding: 16px;
   }
 

@@ -7,9 +7,9 @@
   <link rel="stylesheet" href="/assets/css/main.css">
   <style>
     body { background: #fff; }
-    #app { max-width: 720px; margin: 0 auto; padding: 40px 20px; }
+    #app { max-width: 100%; margin: 0 auto; padding: 40px 20px; display: block; }
     @media (min-width: 900px) {
-      #app { max-width: 800px; padding: 60px 40px; }
+      #app { max-width: 680px; padding: 60px 40px; }
       textarea { min-height: 360px; }
       .login-prompt { padding: 120px 20px; }
     }
@@ -17,33 +17,73 @@
     .form-group { margin-bottom: 16px; }
     label { display: block; font-size: 13px; font-weight: 500; color: #2b2b2b; margin-bottom: 4px; }
     input, textarea { width: 100%; padding: 10px 12px; border: 1px solid #e0d5c0; border-radius: 8px; font-size: 15px; font-family: inherit; box-sizing: border-box; outline: none; transition: border-color 0.15s; }
-    input:focus, textarea:focus { border-color: #d4a373; }
+    input:focus, textarea:focus { border-color: #a594dd; }
     textarea { min-height: 200px; resize: vertical; line-height: 1.7; }
     .btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 24px; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; transition: opacity 0.15s; }
-    .btn-primary { background: #d4a373; color: #fff; }
+    .btn-primary { background: #a594dd; color: #fff; }
     .btn-primary:hover { opacity: 0.9; }
     .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn-outline { background: transparent; color: #d4a373; border: 1px solid #d4a373; }
-    .btn-outline:hover { background: #faedcd; }
+    .btn-outline { background: transparent; color: #a594dd; border: 1px solid #a594dd; }
+    .btn-outline:hover { background: #f8f4fc; }
     .status { margin-top: 12px; font-size: 13px; color: #666; padding: 8px 12px; border-radius: 6px; display: none; }
     .status.success { display: block; background: #ccd5ae; color: #2b2b2b; }
     .status.error { display: block; background:#f5d0d0; color:#8b0000; }
-    .status.info { display: block; background:#faedcd; color:#2b2b2b; }
+    .status.info { display: block; background:#f8f4fc; color:#2b2b2b; }
     .login-prompt { text-align: center; padding: 80px 20px; }
     .login-prompt h2 { font-size: 18px; font-weight: 400; color: #2b2b2b; margin-bottom: 20px; }
     .login-prompt .sub { font-size: 14px; color: #999; margin-top: 12px; line-height: 1.6; }
     .editor-area { display: none; }
     .back-link { font-size: 13px; color: #999; margin-bottom: 16px; display: block; }
-    .back-link:hover { color: #d4a373; }
+    .back-link:hover { color: #a594dd; }
     .token-input-wrap { display: flex; gap: 8px; align-items: center; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
     .token-input-wrap input { width: 340px; max-width: 100%; }
     .help-text { font-size: 12px; color: #999; margin-top: 16px; line-height: 1.6; }
-    .help-text a { color: #d4a373; }
+    .help-text a { color: #a594dd; }
+    .posts-view { display: none; }
+    .posts-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .posts-toolbar h1 { margin-bottom: 0; }
+    .posts-list-admin { display: flex; flex-direction: column; gap: 4px; }
+    .post-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border: 1px solid #e8e0f0; border-radius: 8px; transition: background 0.15s; }
+    .post-row:hover { background: #f8f4fc; }
+    .post-row .post-info { flex: 1; min-width: 0; }
+    .post-row .post-date { font-size: 12px; color: #999; }
+    .post-row .post-name { font-size: 14px; color: #2b2b2b; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .post-row .post-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .post-row .post-actions button { padding: 6px 14px; font-size: 13px; }
+    .btn-danger { background: #e57373; color: #fff; }
+    .btn-danger:hover { opacity: 0.9; }
+    .btn-sm { padding: 6px 14px; font-size: 13px; }
+    .nav-tabs { display: flex; gap: 4px; margin-bottom: 24px; border-bottom: 1px solid #e8e0f0; padding-bottom: 0; }
+    .nav-tab { padding: 8px 18px; border: none; background: transparent; color: #999; font-size: 14px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.15s, border-color 0.15s; }
+    .nav-tab:hover { color: #2b2b2b; }
+    .nav-tab.active { color: #a594dd; border-bottom-color: #a594dd; font-weight: 500; }
+    .empty-state { text-align: center; padding: 60px 20px; color: #999; font-size: 14px; }
+    .confirm-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 200; align-items: center; justify-content: center; }
+    .confirm-overlay.active { display: flex; }
+    .confirm-box { background: #fff; border-radius: 12px; padding: 24px; max-width: 380px; width: 90%; box-shadow: 0 4px 24px rgba(0,0,0,0.12); }
+    .confirm-box h3 { font-size: 16px; margin-bottom: 8px; color: #2b2b2b; }
+    .confirm-box p { font-size: 14px; color: #666; margin-bottom: 20px; line-height: 1.5; }
+    .confirm-box .confirm-actions { display: flex; gap: 8px; justify-content: flex-end; }
+    .admin-header { display: none; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .admin-header .back-link { margin-bottom: 0; }
+    .logout-btn { font-size: 13px; color: #999; background: none; border: none; cursor: pointer; padding: 4px 8px; border-radius: 4px; }
+    .logout-btn:hover { color: #a594dd; background: #f8f4fc; }
+    .admin-month-group { margin-bottom: 2px; border-radius: 8px; overflow: hidden; }
+    .admin-month-group.expanded { background: #faf8fd; }
+    .admin-month-header { display: flex; align-items: center; gap: 6px; padding: 10px 12px; cursor: pointer; user-select: none; border-radius: 8px; transition: background 0.15s; }
+    .admin-month-header:hover { background: #f8f4fc; }
+    .admin-month-icon { font-size: 10px; color: #a594dd; width: 14px; text-align: center; flex-shrink: 0; }
+    .admin-month-label { font-size: 13px; font-weight: 600; color: #2b2b2b; }
+    .admin-month-count { font-size: 11px; color: #999; font-weight: 400; }
+    .admin-month-posts { padding: 0 0 4px 0; display: flex; flex-direction: column; gap: 3px; }
   </style>
 </head>
 <body>
 <div id="app">
-  <a class="back-link" href="/">← 返回博客</a>
+  <div id="admin-header" class="admin-header">
+    <a class="back-link" href="/">← 返回博客</a>
+    <button class="logout-btn" onclick="logout()">切换账号</button>
+  </div>
 
   <!-- 登录页 -->
   <div id="login-view" class="login-prompt">
@@ -64,7 +104,11 @@
 
   <!-- 编辑器 -->
   <div id="editor-view" class="editor-area">
-    <h1>写文章</h1>
+    <div class="nav-tabs">
+      <button class="nav-tab" onclick="showPosts()">管理文章</button>
+      <button class="nav-tab active" onclick="">写新文章</button>
+    </div>
+    <h1 id="editor-title">写文章</h1>
     <div class="form-group">
       <label>标题</label>
       <input type="text" id="post-title" placeholder="今天想写点什么？" autocomplete="off">
@@ -73,11 +117,38 @@
       <label>正文（支持 Markdown）</label>
       <textarea id="post-body" placeholder="用 Markdown 写下你的想法..."></textarea>
     </div>
-    <div style="display:flex;gap:8px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn btn-primary" id="publish-btn" onclick="publish()">发布</button>
-      <button class="btn btn-outline" onclick="logout()">切换账号</button>
+      <button class="btn btn-outline btn-sm" id="cancel-edit-btn" onclick="cancelEdit()" style="display:none">取消编辑</button>
     </div>
     <div id="status" class="status"></div>
+  </div>
+
+  <!-- 文章管理 -->
+  <div id="posts-view" class="posts-view">
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="">管理文章</button>
+      <button class="nav-tab" onclick="showEditor()">写新文章</button>
+    </div>
+    <div class="posts-toolbar">
+      <h1>文章管理</h1>
+      <button class="btn btn-primary btn-sm" onclick="showEditor()">写新文章</button>
+    </div>
+    <div id="posts-list" class="posts-list-admin">
+      <div class="empty-state">加载中...</div>
+    </div>
+  </div>
+</div>
+
+<!-- 删除确认弹窗 -->
+<div id="confirm-overlay" class="confirm-overlay">
+  <div class="confirm-box">
+    <h3>确认删除</h3>
+    <p id="confirm-text">确定要删除这篇文章吗？此操作不可恢复。</p>
+    <div class="confirm-actions">
+      <button class="btn btn-outline btn-sm" onclick="closeConfirm()">取消</button>
+      <button class="btn btn-danger btn-sm" id="confirm-delete-btn">删除</button>
+    </div>
   </div>
 </div>
 
@@ -86,6 +157,7 @@ const REPO = 'belber/belber.github.io';
 const BRANCH = 'main';
 
 let accessToken = null;
+let editingFile = null; // { path, sha } when editing existing post
 
 // === 页面初始化：从 sessionStorage 恢复 token ===
 (function init() {
@@ -93,16 +165,17 @@ let accessToken = null;
   if (saved) {
     accessToken = saved;
     document.getElementById('login-view').style.display = 'none';
-    document.getElementById('editor-view').style.display = 'block';
+    document.getElementById('admin-header').style.display = 'flex';
+    document.getElementById('posts-view').style.display = 'block';
+    loadPosts();
   }
 })();
 
-// === 登录：使用用户粘贴的 PAT ===
+// === 登录 ===
 function loginWithToken() {
   var token = document.getElementById('token-input').value.trim();
   if (!token) { showStatus('请输入 token', 'error'); return; }
 
-  // 验证 token 有效性
   fetch('https://api.github.com/user', {
     headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github.v3+json' }
   })
@@ -111,11 +184,13 @@ function loginWithToken() {
     if (!r.ok) throw new Error('验证失败 (' + r.status + ')');
     return r.json();
   })
-  .then(function(user) {
+  .then(function() {
     accessToken = token;
     sessionStorage.setItem('gh_token', token);
     document.getElementById('login-view').style.display = 'none';
-    document.getElementById('editor-view').style.display = 'block';
+    document.getElementById('admin-header').style.display = 'flex';
+    document.getElementById('posts-view').style.display = 'block';
+    loadPosts();
   })
   .catch(function(err) {
     showStatus(err.message, 'error');
@@ -124,7 +199,10 @@ function loginWithToken() {
 
 function logout() {
   accessToken = null;
+  editingFile = null;
   sessionStorage.removeItem('gh_token');
+  document.getElementById('admin-header').style.display = 'none';
+  document.getElementById('posts-view').style.display = 'none';
   document.getElementById('editor-view').style.display = 'none';
   document.getElementById('login-view').style.display = 'block';
 }
@@ -135,7 +213,195 @@ function showStatus(msg, type) {
   s.className = 'status ' + type;
 }
 
-// === 发布 ===
+// === 视图切换 ===
+function showPosts() {
+  document.getElementById('editor-view').style.display = 'none';
+  document.getElementById('posts-view').style.display = 'block';
+  loadPosts();
+}
+
+function showEditor() {
+  editingFile = null;
+  document.getElementById('editor-title').textContent = '写文章';
+  document.getElementById('publish-btn').textContent = '发布';
+  document.getElementById('cancel-edit-btn').style.display = 'none';
+  document.getElementById('post-title').value = '';
+  document.getElementById('post-body').value = '';
+  document.getElementById('status').className = 'status';
+  document.getElementById('status').style.display = 'none';
+  document.getElementById('posts-view').style.display = 'none';
+  document.getElementById('editor-view').style.display = 'block';
+}
+
+function cancelEdit() {
+  showPosts();
+}
+
+// === 加载文章列表（按月分组） ===
+function loadPosts() {
+  var list = document.getElementById('posts-list');
+  list.innerHTML = '<div class="empty-state">加载中...</div>';
+
+  fetch('https://api.github.com/repos/' + REPO + '/contents/_posts', {
+    headers: { 'Authorization': 'Bearer ' + accessToken, 'Accept': 'application/vnd.github.v3+json' }
+  })
+  .then(function(r) {
+    if (!r.ok) throw new Error('获取文章列表失败');
+    return r.json();
+  })
+  .then(function(files) {
+    if (!files || !files.length) {
+      list.innerHTML = '<div class="empty-state">还没有文章</div>';
+      return;
+    }
+
+    // 按月分组
+    var groups = {};
+    var monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    files.forEach(function(f) {
+      if (f.type !== 'file' || !f.name.match(/^\d{4}-\d{2}-\d{2}-/)) return;
+      var key = f.name.substring(0, 7); // YYYY-MM
+      var ym = key.split('-');
+      var label = monthNames[parseInt(ym[1], 10) - 1] + ' ' + ym[0];
+      if (!groups[key]) groups[key] = { key: key, label: label, posts: [] };
+      groups[key].posts.push(f);
+    });
+
+    var sorted = Object.keys(groups).sort().reverse();
+    // 最新月份展开，其余折叠
+    var expandedKey = sorted[0];
+
+    var html = '';
+    sorted.forEach(function(k) {
+      var g = groups[k];
+      var isExpanded = (k === expandedKey);
+      html += '<div class="admin-month-group' + (isExpanded ? ' expanded' : '') + '">';
+      html += '  <div class="admin-month-header" onclick="toggleAdminMonth(this)">';
+      html += '    <span class="admin-month-icon">' + (isExpanded ? '▼' : '▶') + '</span>';
+      html += '    <span class="admin-month-label">' + g.label + ' <span class="admin-month-count">(' + g.posts.length + ')</span></span>';
+      html += '  </div>';
+      html += '  <div class="admin-month-posts"' + (isExpanded ? '' : ' style="display:none"') + '>';
+      g.posts.sort(function(a, b) { return b.name.localeCompare(a.name); });
+      g.posts.forEach(function(f) {
+        var datePart = f.name.substring(0, 10);
+        var namePart = f.name.substring(11).replace(/\.md$/, '').replace(/-/g, ' ');
+        html += '<div class="post-row">';
+        html += '  <div class="post-info">';
+        html += '    <div class="post-date">' + datePart + '</div>';
+        html += '    <div class="post-name">' + namePart + '</div>';
+        html += '  </div>';
+        html += '  <div class="post-actions">';
+        html += '    <button class="btn btn-outline btn-sm" onclick="editPost(\'' + f.path + '\',\'' + f.sha + '\')">编辑</button>';
+        html += '    <button class="btn btn-danger btn-sm" onclick="confirmDelete(\'' + namePart + '\',\'' + f.path + '\',\'' + f.sha + '\')">删除</button>';
+        html += '  </div>';
+        html += '</div>';
+      });
+      html += '  </div>';
+      html += '</div>';
+    });
+    list.innerHTML = html;
+  })
+  .catch(function(err) {
+    list.innerHTML = '<div class="empty-state">加载失败：' + err.message + '</div>';
+  });
+}
+
+function toggleAdminMonth(header) {
+  var group = header.parentNode;
+  var postsDiv = group.querySelector('.admin-month-posts');
+  var icon = header.querySelector('.admin-month-icon');
+  if (postsDiv.style.display === 'none') {
+    postsDiv.style.display = '';
+    icon.textContent = '▼';
+    group.classList.add('expanded');
+  } else {
+    postsDiv.style.display = 'none';
+    icon.textContent = '▶';
+    group.classList.remove('expanded');
+  }
+}
+
+// === 编辑文章 ===
+function editPost(path, sha) {
+  editingFile = null;
+  document.getElementById('editor-title').textContent = '加载中...';
+  document.getElementById('posts-view').style.display = 'none';
+  document.getElementById('editor-view').style.display = 'block';
+
+  fetch('https://api.github.com/repos/' + REPO + '/contents/' + path, {
+    headers: { 'Authorization': 'Bearer ' + accessToken, 'Accept': 'application/vnd.github.v3+json' }
+  })
+  .then(function(r) {
+    if (!r.ok) throw new Error('加载文章失败');
+    return r.json();
+  })
+  .then(function(data) {
+    // 解码 base64 内容
+    var raw = decodeURIComponent(escape(atob(data.content)));
+    // 解析 front matter
+    var title = '';
+    var body = raw;
+    var match = raw.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
+    if (match) {
+      body = match[2].trim();
+      var fmMatch = match[1].match(/title:\s*"([^"]*)"/);
+      if (fmMatch) title = fmMatch[1];
+    }
+
+    editingFile = { path: path, sha: sha };
+    document.getElementById('editor-title').textContent = '编辑文章';
+    document.getElementById('publish-btn').textContent = '保存修改';
+    document.getElementById('cancel-edit-btn').style.display = 'inline-flex';
+    document.getElementById('post-title').value = title;
+    document.getElementById('post-body').value = body;
+    document.getElementById('status').className = 'status';
+    document.getElementById('status').style.display = 'none';
+  })
+  .catch(function(err) {
+    showStatus('加载失败：' + err.message, 'error');
+  });
+}
+
+// === 确认删除 ===
+var pendingDelete = null;
+
+function confirmDelete(name, path, sha) {
+  document.getElementById('confirm-text').textContent = '确定要删除 "' + name + '" 吗？此操作不可恢复。';
+  document.getElementById('confirm-overlay').classList.add('active');
+  pendingDelete = { path: path, sha: sha };
+  document.getElementById('confirm-delete-btn').onclick = doDelete;
+}
+
+function closeConfirm() {
+  document.getElementById('confirm-overlay').classList.remove('active');
+  pendingDelete = null;
+}
+
+function doDelete() {
+  if (!pendingDelete) return;
+  var d = pendingDelete;
+  pendingDelete = null;
+  closeConfirm();
+
+  fetch('https://api.github.com/repos/' + REPO + '/contents/' + d.path, {
+    method: 'DELETE',
+    headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' },
+    body: JSON.stringify({
+      message: 'delete: ' + d.path,
+      sha: d.sha,
+      branch: BRANCH
+    })
+  })
+  .then(function(r) {
+    if (!r.ok) throw new Error('删除失败');
+    loadPosts();
+  })
+  .catch(function(err) {
+    alert('删除失败：' + err.message);
+  });
+}
+
+// === 发布 / 保存 ===
 function publish() {
   var title = document.getElementById('post-title').value.trim();
   var body = document.getElementById('post-body').value.trim();
@@ -144,42 +410,73 @@ function publish() {
 
   var btn = document.getElementById('publish-btn');
   btn.disabled = true;
-  btn.textContent = '发布中...';
-  showStatus('正在发布...', 'info');
+  btn.textContent = editingFile ? '保存中...' : '发布中...';
+  showStatus('正在' + (editingFile ? '保存' : '发布') + '...', 'info');
 
   var now = new Date();
   var pad = function(n) { return String(n).padStart(2, '0'); };
   var dateStr = now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate());
   var timeStr = pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
-  var slug = title.toLowerCase().replace(/[^\w一-鿿]+/g, '-').replace(/^-|-$/g, '') || 'post';
-  var filename = '_posts/' + dateStr + '-' + slug + '.md';
   var tz = '+08:00';
-
   var frontMatter = '---\nlayout: post\ntitle: "' + title + '"\ndate: ' + dateStr + ' ' + timeStr + ' ' + tz + '\n---\n\n' + body;
 
-  fetch('https://api.github.com/repos/' + REPO + '/contents/' + filename, {
-    method: 'PUT',
-    headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' },
-    body: JSON.stringify({
-      message: 'feat: ' + title,
-      content: btoa(unescape(encodeURIComponent(frontMatter))),
-      branch: BRANCH
+  if (editingFile) {
+    // 更新已有文章
+    fetch('https://api.github.com/repos/' + REPO + '/contents/' + editingFile.path, {
+      method: 'PUT',
+      headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' },
+      body: JSON.stringify({
+        message: 'update: ' + title,
+        content: btoa(unescape(encodeURIComponent(frontMatter))),
+        sha: editingFile.sha,
+        branch: BRANCH
+      })
     })
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(result) {
-    if (result.message) throw new Error(result.message);
-    btn.textContent = '✓ 已发布';
-    showStatus('文章 "' + title + '" 已发布！博客将在 1-2 分钟后更新。', 'success');
-    document.getElementById('post-title').value = '';
-    document.getElementById('post-body').value = '';
-    setTimeout(function() { btn.disabled = false; btn.textContent = '发布'; }, 3000);
-  })
-  .catch(function(err) {
-    btn.disabled = false;
-    btn.textContent = '发布';
-    showStatus('发布失败：' + (err.message || '未知错误'), 'error');
-  });
+    .then(function(r) { return r.json(); })
+    .then(function(result) {
+      if (result.message) throw new Error(result.message);
+      editingFile = { path: editingFile.path, sha: result.content.sha };
+      btn.textContent = '✓ 已保存';
+      showStatus('文章 "' + title + '" 已更新！', 'success');
+      setTimeout(function() {
+        btn.disabled = false;
+        btn.textContent = '保存修改';
+      }, 2000);
+    })
+    .catch(function(err) {
+      btn.disabled = false;
+      btn.textContent = '保存修改';
+      showStatus('保存失败：' + (err.message || '未知错误'), 'error');
+    });
+  } else {
+    // 新建文章
+    var slug = title.toLowerCase().replace(/[^\w一-鿿]+/g, '-').replace(/^-|-$/g, '') || 'post';
+    var filename = '_posts/' + dateStr + '-' + slug + '.md';
+
+    fetch('https://api.github.com/repos/' + REPO + '/contents/' + filename, {
+      method: 'PUT',
+      headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' },
+      body: JSON.stringify({
+        message: 'feat: ' + title,
+        content: btoa(unescape(encodeURIComponent(frontMatter))),
+        branch: BRANCH
+      })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(result) {
+      if (result.message) throw new Error(result.message);
+      btn.textContent = '✓ 已发布';
+      showStatus('文章 "' + title + '" 已发布！', 'success');
+      document.getElementById('post-title').value = '';
+      document.getElementById('post-body').value = '';
+      setTimeout(function() { btn.disabled = false; btn.textContent = '发布'; }, 2000);
+    })
+    .catch(function(err) {
+      btn.disabled = false;
+      btn.textContent = '发布';
+      showStatus('发布失败：' + (err.message || '未知错误'), 'error');
+    });
+  }
 }
 </script>
 </body>

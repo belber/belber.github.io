@@ -6,7 +6,14 @@ layout: default
   <!-- 左栏：文章列表 -->
   <aside id="sidebar">
     <div class="sidebar-header">
-      <h1 class="site-title"><a href="/">{{ site.title }}</a></h1>
+      <div class="sidebar-header-row">
+        <svg class="sidebar-logo" width="28" height="28" viewBox="0 0 80 80">
+          <rect x="4" y="4" width="72" height="72" rx="16" fill="#a594dd"/>
+          <text x="40" y="54" text-anchor="middle" font-size="36" font-weight="600" fill="#fff" font-family="serif">蜉</text>
+        </svg>
+        <h1 class="site-title"><a href="/">{{ site.title }}</a></h1>
+        <button id="sidebar-toggle" class="sidebar-toggle" aria-label="切换侧栏">◀</button>
+      </div>
     </div>
 
     <!-- 月份导航 -->
