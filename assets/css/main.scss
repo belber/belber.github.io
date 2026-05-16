@@ -287,6 +287,26 @@ a {
   }
 }
 
+// === 侧栏拖动手柄 ===
+.sidebar-resize-handle {
+  width: 4px;
+  cursor: col-resize;
+  flex-shrink: 0;
+  background: transparent;
+  transition: background 0.15s;
+  z-index: 5;
+  position: relative;
+
+  &:hover, &.active {
+    background: $primary;
+  }
+
+  // 手机端不显示
+  @media (max-width: 659px) {
+    display: none;
+  }
+}
+
 // === 右栏 ===
 #content {
   flex: 1;

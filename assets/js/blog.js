@@ -303,6 +303,63 @@
     }
   });
 
+  // === 侧栏拖拽 ===
+  function initResizeHandle() {
+    var handle = document.getElementById('sidebar-resize-handle');
+    var sidebar = document.getElementById('sidebar');
+    if (!handle || !sidebar) return;
+
+    // 恢复保存的宽度
+    try {
+      var saved = localStorage.getItem('sidebar_width');
+      if (saved) {
+        sidebar.style.width = saved;
+        sidebar.style.minWidth = saved;
+      }
+    } catch(e) {}
+
+    var startX, startWidth;
+
+    function onStart(e) {
+      if (sidebar.classList.contains('collapsed')) return;
+      if (window.innerWidth < 660) return;
+      startX = e.clientX;
+      startWidth = sidebar.offsetWidth;
+      handle.classList.add('active');
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+      sidebar.style.transition = 'none';
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onEnd);
+    }
+
+    function onMove(e) {
+      var width = startWidth + (e.clientX - startX);
+      width = Math.max(180, Math.min(500, width));
+      sidebar.style.width = width + 'px';
+      sidebar.style.minWidth = width + 'px';
+    }
+
+    function onEnd() {
+      handle.classList.remove('active');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      sidebar.style.transition = '';
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onEnd);
+      try { localStorage.setItem('sidebar_width', sidebar.style.width); } catch(e) {}
+    }
+
+    handle.addEventListener('mousedown', onStart);
+  }
+
+  // 在 init 最后调用
+  var origInit = init;
+  init = function() {
+    origInit();
+    initResizeHandle();
+  };
+
   // DOM 就绪后初始化
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
