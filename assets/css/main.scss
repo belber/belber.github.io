@@ -471,6 +471,14 @@ a {
   white-space: nowrap;
 }
 
+// === 中等屏幕（折叠屏展开态） ===
+@media (min-width: 660px) and (max-width: 900px) {
+  #sidebar {
+    width: 260px;
+    min-width: 260px;
+  }
+}
+
 // === 手机端 ===
 @media (max-width: 659px) {
   #app {
@@ -494,33 +502,9 @@ a {
     transform: translateX(0);
   }
 
-  // 手机端不需要侧栏内的折叠按钮（由汉堡按钮控制）
-  .sidebar-toggle { display: none; }
-
   #content {
     height: 100vh;
     padding: 20px;
-  }
-
-  .mobile-menu-btn {
-    position: fixed;
-    bottom: 12px;
-    left: 12px;
-    z-index: 100;
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
-    border: 1px solid $border;
-    background: #fff;
-    color: $text;
-    font-size: 18px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-
-    &.hidden { display: none; }
   }
 }
 

@@ -242,14 +242,11 @@
   function toggleSidebar() {
     var sidebar = document.getElementById('sidebar');
     var overlay = document.getElementById('sidebar-overlay');
-    var mobileBtn = document.querySelector('.mobile-menu-btn');
     if (!sidebar) return;
     if (window.innerWidth < 660) {
       sidebar.classList.remove('collapsed');
-      var willOpen = !sidebar.classList.contains('open');
       sidebar.classList.toggle('open');
       if (overlay) overlay.classList.toggle('active');
-      if (mobileBtn) mobileBtn.classList.toggle('hidden', willOpen);
     } else {
       sidebar.classList.remove('open');
       if (overlay) overlay.classList.remove('active');
@@ -262,21 +259,12 @@
   function closeSidebar() {
     var sidebar = document.getElementById('sidebar');
     var overlay = document.getElementById('sidebar-overlay');
-    var mobileBtn = document.querySelector('.mobile-menu-btn');
     if (sidebar) sidebar.classList.remove('open');
     if (overlay) overlay.classList.remove('active');
-    if (mobileBtn) mobileBtn.classList.remove('hidden');
   }
 
   // === 初始化 ===
   function init() {
-    // 添加手机端汉堡按钮
-    var mobileBtn = document.createElement('button');
-    mobileBtn.className = 'mobile-menu-btn';
-    mobileBtn.innerHTML = '☰';
-    mobileBtn.onclick = toggleSidebar;
-    document.body.appendChild(mobileBtn);
-
     // 添加遮罩层
     var overlay = document.createElement('div');
     overlay.id = 'sidebar-overlay';
@@ -300,13 +288,11 @@
   // 窗口 resize 时清理跨断点状态残留
   window.addEventListener('resize', function() {
     var sidebar = document.getElementById('sidebar');
-    var mobileBtn = document.querySelector('.mobile-menu-btn');
     if (!sidebar) return;
     if (window.innerWidth >= 660 && sidebar.classList.contains('open')) {
       sidebar.classList.remove('open');
       var overlay = document.getElementById('sidebar-overlay');
       if (overlay) overlay.classList.remove('active');
-      if (mobileBtn) mobileBtn.classList.remove('hidden');
     }
     if (window.innerWidth >= 660 && sidebar.classList.contains('collapsed')) {
       // 从手机端展开后，如果侧栏是折叠状态，展开它
