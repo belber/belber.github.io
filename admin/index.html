@@ -27,10 +27,6 @@
     .login-prompt { text-align: center; padding: 80px 20px; }
     .login-prompt h2 { font-size: 18px; font-weight: 400; color: #2b2b2b; margin-bottom: 20px; }
     .login-prompt .sub { font-size: 14px; color: #999; margin-top: 12px; line-height: 1.6; }
-    .device-code { background: #fefae0; border: 1px solid #e0d5c0; border-radius: 8px; padding: 16px; margin-top: 16px; display: none; }
-    .device-code .code { font-size: 28px; font-weight: 700; letter-spacing: 4px; color: #d4a373; text-align: center; padding: 12px; }
-    .device-code .url { font-size: 14px; text-align: center; }
-    .device-code .url a { color: #d4a373; }
     .editor-area { display: none; }
     .back-link { font-size: 13px; color: #999; margin-bottom: 16px; display: block; }
     .back-link:hover { color: #d4a373; }
@@ -45,12 +41,6 @@
     <h2>写一篇日记</h2>
     <button class="btn btn-primary" onclick="startLogin()">登录 GitHub</button>
     <div class="sub">需要 GitHub 授权才能发布文章</div>
-    <div id="device-code-box" class="device-code">
-      <p style="font-size:13px;margin-bottom:8px;">在浏览器中打开以下链接并输入验证码：</p>
-      <div class="code" id="device-code"></div>
-      <div class="url"><a href="#" id="device-url" target="_blank" onclick="openUrl()">打开验证页面</a></div>
-      <p style="font-size:12px;color:#999;margin-top:10px;">等待授权中...</p>
-    </div>
   </div>
 
   <!-- 编辑器 -->
@@ -73,70 +63,34 @@
 const CLIENT_ID = 'Ov23li8hGMXyMY4f5nBA';
 const REPO = 'belber/belber.github.io';
 const BRANCH = 'main';
+const REDIRECT_URI = 'https://belber.github.io/admin/';
 
 let accessToken = null;
-let deviceInterval = null;
 
-// === 登录 ===
+// === 页面初始化：检查 URL 中是否有 GitHub 返回的 token ===
+(function init() {
+  var hash = location.hash;
+  if (hash && hash.includes('access_token=')) {
+    var params = new URLSearchParams(hash.replace('#', '?'));
+    accessToken = params.get('access_token');
+    if (accessToken) {
+      // 清除 URL 中的 token，防止泄露
+      history.replaceState(null, '', window.location.pathname);
+      document.getElementById('login-view').style.display = 'none';
+      document.getElementById('editor-view').style.display = 'block';
+      return;
+    }
+  }
+})();
+
+// === 登录：跳转到 GitHub 授权页（Implicit Grant）===
 function startLogin() {
-  document.querySelector('.login-prompt h2').textContent = '正在请求授权...';
-  document.querySelector('.login-prompt .btn').style.display = 'none';
-
-  fetch('https://github.com/login/device/code', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-    body: JSON.stringify({ client_id: CLIENT_ID, scope: 'repo' })
-  })
-  .then(r => r.json())
-  .then(data => {
-    if (data.error) throw new Error(data.error_description || data.error);
-    document.querySelector('.login-prompt .sub').style.display = 'none';
-    document.getElementById('device-code-box').style.display = 'block';
-    document.getElementById('device-code').textContent = data.user_code;
-    document.getElementById('device-url').href = data.verification_uri;
-    document.getElementById('device-url').textContent = data.verification_uri;
-
-    // 轮询检查授权状态
-    deviceInterval = setInterval(function() {
-      fetch('https://github.com/login/oauth/access_token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({
-          client_id: CLIENT_ID,
-          device_code: data.device_code,
-          grant_type: 'urn:ietf:params:oauth:grant-type:device_code'
-        })
-      })
-      .then(r => r.json())
-      .then(tokenData => {
-        if (tokenData.access_token) {
-          clearInterval(deviceInterval);
-          accessToken = tokenData.access_token;
-          showEditor();
-        } else if (tokenData.error === 'authorization_pending') {
-          // 等待用户授权，继续轮询
-        } else if (tokenData.error === 'slow_down') {
-          // GitHub 要求减慢轮询频率，忽略
-        } else if (tokenData.error === 'expired_token') {
-          clearInterval(deviceInterval);
-          showError('授权已过期，请刷新页面重试');
-        } else if (tokenData.error === 'access_denied') {
-          clearInterval(deviceInterval);
-          showError('授权已取消');
-          location.reload();
-        }
-      }).catch(function() {});
-    }, 5000);
-  })
-  .catch(function(err) {
-    document.querySelector('.login-prompt h2').textContent = '授权失败';
-    showError(err.message || '请求失败，请检查网络');
-  });
-}
-
-function showEditor() {
-  document.getElementById('login-view').style.display = 'none';
-  document.getElementById('editor-view').style.display = 'block';
+  var authUrl = 'https://github.com/login/oauth/authorize'
+    + '?client_id=' + encodeURIComponent(CLIENT_ID)
+    + '&redirect_uri=' + encodeURIComponent(REDIRECT_URI)
+    + '&scope=repo'
+    + '&response_type=token';
+  window.location.href = authUrl;
 }
 
 function showError(msg) {
@@ -179,7 +133,6 @@ function publish() {
 
   var frontMatter = '---\nlayout: post\ntitle: "' + title + '"\ndate: ' + dateStr + ' ' + timeStr + ' ' + tz + '\n---\n\n' + body;
 
-  // 使用 Contents API 创建文件（一行搞定）
   fetch('https://api.github.com/repos/' + REPO + '/contents/' + filename, {
     method: 'PUT',
     headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' },
@@ -203,11 +156,6 @@ function publish() {
     btn.textContent = '发布';
     showError('发布失败：' + (err.message || '未知错误'));
   });
-}
-
-function openUrl() {
-  var url = document.getElementById('device-url').href;
-  window.open(url, '_blank');
 }
 </script>
 </body>
