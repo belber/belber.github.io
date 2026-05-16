@@ -198,9 +198,12 @@
     var overlay = document.getElementById('sidebar-overlay');
     if (!sidebar) return;
     if (window.innerWidth < 768) {
+      sidebar.classList.remove('collapsed');
       sidebar.classList.toggle('open');
       if (overlay) overlay.classList.toggle('active');
     } else {
+      sidebar.classList.remove('open');
+      if (overlay) overlay.classList.remove('active');
       sidebar.classList.toggle('collapsed');
       var btn = document.getElementById('sidebar-toggle');
       if (btn) btn.textContent = sidebar.classList.contains('collapsed') ? '▶' : '◀';
@@ -242,6 +245,17 @@
     }
     loadInitialPost();
   }
+
+  // 窗口 resize 时清理跨断点状态残留
+  window.addEventListener('resize', function() {
+    var sidebar = document.getElementById('sidebar');
+    if (!sidebar) return;
+    if (window.innerWidth >= 768 && sidebar.classList.contains('open')) {
+      sidebar.classList.remove('open');
+      var overlay = document.getElementById('sidebar-overlay');
+      if (overlay) overlay.classList.remove('active');
+    }
+  });
 
   // DOM 就绪后初始化
   if (document.readyState === 'loading') {
