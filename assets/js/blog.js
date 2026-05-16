@@ -107,6 +107,11 @@
     listItem.classList.add('active');
     currentActiveItem = listItem;
 
+    // 移动端选择文章后收起侧栏
+    if (window.innerWidth < 768) {
+      closeSidebar();
+    }
+
     // 显示加载状态
     welcomeEl.style.display = 'none';
     postDisplayEl.style.display = 'block';
@@ -154,8 +159,47 @@
     }
   }
 
+  // === 侧栏交互 ===
+  function toggleSidebar() {
+    var sidebar = document.getElementById('sidebar');
+    var overlay = document.getElementById('sidebar-overlay');
+    if (window.innerWidth < 768) {
+      sidebar.classList.toggle('open');
+      overlay.classList.toggle('active');
+    } else {
+      sidebar.classList.toggle('collapsed');
+      var btn = document.getElementById('sidebar-toggle');
+      btn.textContent = sidebar.classList.contains('collapsed') ? '▶' : '◀';
+    }
+  }
+
+  function closeSidebar() {
+    var sidebar = document.getElementById('sidebar');
+    var overlay = document.getElementById('sidebar-overlay');
+    sidebar.classList.remove('open');
+    overlay.classList.remove('active');
+  }
+
   // === 初始化 ===
   function init() {
+    // 添加手机端汉堡按钮
+    var mobileBtn = document.createElement('button');
+    mobileBtn.className = 'mobile-menu-btn';
+    mobileBtn.innerHTML = '☰';
+    mobileBtn.onclick = toggleSidebar;
+    document.body.appendChild(mobileBtn);
+
+    // 添加遮罩层
+    var overlay = document.createElement('div');
+    overlay.id = 'sidebar-overlay';
+    overlay.className = 'sidebar-overlay';
+    overlay.onclick = closeSidebar;
+    document.body.appendChild(overlay);
+
+    // 绑定侧栏折叠按钮
+    var toggleBtn = document.getElementById('sidebar-toggle');
+    if (toggleBtn) toggleBtn.onclick = toggleSidebar;
+
     renderMonthNav(posts);
     // 默认选择第一个月份
     var firstMonth = monthNavEl.querySelector('.month-btn');
