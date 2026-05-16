@@ -328,53 +328,87 @@ a {
 // === 欢迎区 ===
 .welcome-area {
   animation: fadeIn 0.3s ease;
+  max-width: 520px;
 }
 
 .welcome-hero {
-  background: linear-gradient(135deg, #e8e0f5 0%, #c4b8e0 40%, #b8aee0 65%, #d4cce8 100%);
-  border-radius: 16px;
-  padding: 60px 40px;
-  text-align: center;
+  height: 200px;
+  border-radius: 12px;
+  background-size: cover;
+  background-position: center;
   position: relative;
   overflow: hidden;
-  margin-bottom: 24px;
+  margin-bottom: 0;
+}
+
+.welcome-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(transparent 50%, rgba(0,0,0,0.55));
+  display: flex;
+  align-items: flex-end;
+  padding: 20px;
+
+  .welcome-hero-label {
+    color: rgba(255,255,255,0.75);
+    font-size: 12px;
+    letter-spacing: 3px;
+    font-weight: 400;
+  }
+}
+
+.welcome-body {
+  padding: 32px 0 0;
+  text-align: center;
+}
+
+.welcome-dash {
+  font-size: 12px;
+  color: $primary;
+  letter-spacing: 4px;
+  margin-bottom: 20px;
 }
 
 .welcome-quote {
-  font-size: 20px;
+  font-size: 17px;
   line-height: 1.9;
   color: $text;
-  position: relative;
-  z-index: 1;
   margin: 0;
+  font-weight: 400;
+  border: none;
+  padding: 0;
+}
 
-  cite {
-    display: block;
-    margin-top: 16px;
-    font-size: 13px;
-    color: $text-muted;
-    font-style: normal;
-    font-weight: 400;
-  }
+.welcome-signature {
+  margin-top: 14px;
+  font-size: 13px;
+  color: $primary;
+  font-weight: 500;
+}
+
+.welcome-divider {
+  margin: 24px auto;
+  width: 40px;
+  height: 1px;
+  background: $border;
 }
 
 // === 统计卡片 ===
 .welcome-stats {
   display: flex;
-  gap: 16px;
+  gap: 12px;
 }
 
 .stat-card {
   flex: 1;
-  background: rgba(255,255,255,0.6);
-  backdrop-filter: blur(4px);
-  border-radius: 12px;
-  padding: 20px 16px;
+  background: $light-bg;
+  border-radius: 10px;
+  padding: 16px 12px;
   text-align: center;
 
   .stat-number {
     display: block;
-    font-size: 28px;
+    font-size: 26px;
     font-weight: 600;
     color: $accent;
     line-height: 1.2;
@@ -382,9 +416,10 @@ a {
 
   .stat-label {
     display: block;
-    font-size: 12px;
+    font-size: 11px;
     color: $text-muted;
-    margin-top: 4px;
+    margin-top: 2px;
+    letter-spacing: 1px;
   }
 }
 
