@@ -345,9 +345,23 @@ a {
     background: $primary;
   }
 
-  // 手机端不显示
+  // 手机端：默认隐藏，侧栏展开时显示在右侧边缘（加宽便于触摸）
   @media (max-width: 659px) {
     display: none;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    width: 16px;
+    z-index: 100;
+    background: transparent;
+    transition: none;
+  }
+}
+
+// 手机端侧栏展开时显示拖动条
+@media (max-width: 659px) {
+  #sidebar.open + .sidebar-resize-handle {
+    display: block;
   }
 }
 
@@ -630,16 +644,35 @@ a {
     top: 0;
     left: 0;
     bottom: 0;
-    width: 300px;
-    min-width: 300px;
+    width: 48px;
     z-index: 99;
-    transform: translateX(-100%);
     border-right: 1px solid $border;
-    transition: transform 0.25s ease;
+    transition: width 0.2s ease;
+    overflow: hidden;
+    background: $page-bg;
+    display: flex;
+    flex-direction: column;
   }
 
   #sidebar.open {
-    transform: translateX(0);
+    width: 300px;
+    box-shadow: 2px 0 12px rgba(0,0,0,0.15);
+  }
+
+  // 折叠状态隐藏内容
+  #sidebar:not(.open) .site-title,
+  #sidebar:not(.open) #month-nav,
+  #sidebar:not(.open) .post-list,
+  #sidebar:not(.open) .sidebar-footer {
+    display: none;
+  }
+
+  #sidebar:not(.open) .sidebar-header-row {
+    justify-content: center;
+  }
+
+  #sidebar:not(.open) .sidebar-toggle {
+    margin-left: 0;
   }
 
   #content {
@@ -650,9 +683,8 @@ a {
 
 // === 小屏 ===
 @media (max-width: 480px) {
-  #sidebar {
+  #sidebar.open {
     width: 260px;
-    min-width: 260px;
   }
 
   #content {
