@@ -148,7 +148,7 @@
       if (excerptHtml.length > 80) {
         excerptHtml = excerptHtml.substring(0, 80).replace(/\s\S*$/, '') + '…';
       }
-      html += '      <div class="post-item-excerpt">' + excerptHtml.replace(/\n/g, '<br>') + '</div>';
+      html += '      <div class="post-item-excerpt">' + excerptHtml.replace(/\n/g, ' ') + '</div>';
         html += '    </div>';
         html += '  </div>';
         html += '</div>';
