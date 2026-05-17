@@ -685,6 +685,7 @@ a {
   #content {
     height: 100vh;
     padding: 20px;
+    padding-left: calc(48px + 20px);
   }
 }
 
@@ -697,6 +698,7 @@ a {
   #content {
     height: 100vh;
     padding: 16px;
+    padding-left: 64px;
   }
 
   .post-article-title {
