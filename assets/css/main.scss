@@ -163,9 +163,15 @@ a {
   padding: 10px 16px;
   border-bottom: 1px solid $border;
   background: darken($page-bg, 1%);
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
   font-size: 12px;
   position: relative;
+
+  &::-webkit-scrollbar { height: 3px; }
+  &::-webkit-scrollbar-thumb { background: $border; border-radius: 2px; }
 
   .year-selector {
     font-weight: 600;
@@ -247,59 +253,9 @@ a {
   }
 }
 
-// === 按月分组 ===
-.month-group {
-  margin: 0 8px;
-  border-radius: 8px;
-  overflow: hidden;
-
-  &.expanded {
-    background: darken($page-bg, 0.5%);
-  }
-}
-
-.month-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 16px;
-  cursor: pointer;
-  user-select: none;
-  border-radius: 8px;
-  transition: background 0.15s;
-
-  &:hover {
-    background: $light-bg;
-  }
-}
-
-.month-toggle-icon {
-  font-size: 10px;
-  color: $primary;
-  width: 16px;
-  text-align: center;
-  flex-shrink: 0;
-}
-
-.month-label {
-  font-size: 13px;
-  font-weight: 600;
-  color: $text;
-}
-
-.month-count {
-  font-size: 11px;
-  color: $text-muted;
-  font-weight: 400;
-}
-
-.month-posts {
-  padding-bottom: 4px;
-}
-
 .post-item {
   display: block;
-  padding: 6px 16px 6px 32px;
+  padding: 6px 16px 6px 16px;
   margin: 1px 8px;
   border-radius: 8px;
   cursor: pointer;
@@ -332,7 +288,7 @@ a {
 
   .post-item-row {
     display: flex;
-    gap: 8px;
+    gap: 6px;
   }
 
   .post-item-date {
@@ -347,6 +303,12 @@ a {
     flex: 1;
     min-width: 0;
   }
+}
+
+// === 月份分隔线 ===
+.month-separator {
+  border-top: 1px solid $border;
+  margin: 8px 16px;
 }
 
 // === 侧栏拖动手柄 ===
