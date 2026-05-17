@@ -3,7 +3,6 @@
 
   // === 数据 ===
   const posts = window.__POSTS_DATA__ || [];
-  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
   // === 工具函数 ===
   function groupByMonth(posts) {
@@ -15,7 +14,7 @@
         groups[key] = {
           year: d.getFullYear(),
           month: d.getMonth(),
-          label: monthNames[d.getMonth()] + ' ' + d.getFullYear(),
+          label: d.getFullYear() + '年' + (d.getMonth() + 1) + '月',
           key: key,
           posts: []
         };
@@ -36,7 +35,7 @@
       var d = new Date(p.date);
       var key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
       if (!map[key]) {
-        map[key] = { year: d.getFullYear(), month: d.getMonth(), label: monthNames[d.getMonth()] + ' ' + d.getFullYear(), posts: [] };
+        map[key] = { year: d.getFullYear(), month: d.getMonth(), label: d.getFullYear() + '年' + (d.getMonth() + 1) + '月', posts: [] };
       }
       map[key].posts.push(p);
     });
@@ -76,7 +75,7 @@
       html += '</div>';
       yearMonths.forEach(function(m) {
         var key = m.year + '-' + String(m.month + 1).padStart(2, '0');
-        html += '<button class="month-btn' + (key === selectedMonth ? ' active' : '') + '" data-month="' + key + '">' + monthNames[m.month] + '</button>';
+        html += '<button class="month-btn' + (key === selectedMonth ? ' active' : '') + '" data-month="' + key + '">' + (m.month + 1) + '月</button>';
       });
       monthNavEl.innerHTML = html;
 
@@ -139,9 +138,16 @@
       html += '</div>';
       html += '<div class="month-posts"' + displayStyle + '>';
       g.posts.forEach(function(p) {
+        var d = new Date(p.date);
+        var dateStr = (d.getMonth() + 1) + '月' + d.getDate() + '日';
         html += '<div class="post-item" data-url="' + p.url + '">';
-        html += '  <div class="post-item-title">' + p.title + '</div>';
-        html += '  <div class="post-item-excerpt">' + p.excerpt + '</div>';
+        html += '  <div class="post-item-row">';
+        html += '    <span class="post-item-date">' + dateStr + '</span>';
+        html += '    <div class="post-item-text">';
+        html += '      <div class="post-item-title">' + p.title + '</div>';
+        html += '      <div class="post-item-excerpt">' + p.excerpt + '</div>';
+        html += '    </div>';
+        html += '  </div>';
         html += '</div>';
       });
       html += '</div>';
