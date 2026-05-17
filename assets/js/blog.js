@@ -85,7 +85,10 @@
           selectedMonth = btn.dataset.month;
           monthNavEl.querySelectorAll('.month-btn').forEach(function(b) { b.classList.remove('active'); });
           btn.classList.add('active');
-          renderPostList(posts, btn.dataset.month);
+          var target = postListEl.querySelector('.post-item[data-month="' + selectedMonth + '"]');
+          if (target) {
+            target.scrollIntoView({ block: 'start' });
+          }
         });
       });
 
@@ -122,25 +125,15 @@
     }
   });
 
-  function renderPostList(posts, activeMonthKey) {
+  function renderPostList(posts) {
     var groups = groupByMonth(posts);
     var html = '';
 
-    groups.forEach(function(g) {
-      var isExpanded = (g.key === activeMonthKey);
-      var displayStyle = isExpanded ? '' : ' style="display:none"';
-      var toggleIcon = isExpanded ? '▼' : '▶';
-
-      html += '<div class="month-group' + (isExpanded ? ' expanded' : '') + '" data-month="' + g.key + '">';
-      html += '<div class="month-header" data-month="' + g.key + '">';
-      html += '  <span class="month-toggle-icon">' + toggleIcon + '</span>';
-      html += '  <span class="month-label">' + g.label + ' <span class="month-count">(' + g.posts.length + ')</span></span>';
-      html += '</div>';
-      html += '<div class="month-posts"' + displayStyle + '>';
+    groups.forEach(function(g, idx) {
       g.posts.forEach(function(p) {
         var d = new Date(p.date);
         var dateStr = (d.getMonth() + 1) + '月' + d.getDate() + '日';
-        html += '<div class="post-item" data-url="' + p.url + '">';
+        html += '<div class="post-item" data-url="' + p.url + '" data-month="' + g.key + '">';
         html += '  <div class="post-item-row">';
         html += '    <span class="post-item-date">' + dateStr + '</span>';
         html += '    <div class="post-item-text">';
@@ -150,29 +143,13 @@
         html += '  </div>';
         html += '</div>';
       });
-      html += '</div>';
-      html += '</div>';
+      // 月份分隔线（除最后一个月份组）
+      if (idx < groups.length - 1) {
+        html += '<div class="month-separator"></div>';
+      }
     });
 
     postListEl.innerHTML = html;
-
-    // 月份标题点击折叠/展开
-    postListEl.querySelectorAll('.month-header').forEach(function(hdr) {
-      hdr.addEventListener('click', function(e) {
-        var group = this.parentNode;
-        var postsDiv = group.querySelector('.month-posts');
-        var icon = this.querySelector('.month-toggle-icon');
-        if (postsDiv.style.display === 'none') {
-          postsDiv.style.display = '';
-          icon.textContent = '▼';
-          group.classList.add('expanded');
-        } else {
-          postsDiv.style.display = 'none';
-          icon.textContent = '▶';
-          group.classList.remove('expanded');
-        }
-      });
-    });
 
     // 文章点击事件
     postListEl.querySelectorAll('.post-item').forEach(function(item) {
@@ -189,6 +166,14 @@
     }
     listItem.classList.add('active');
     currentActiveItem = listItem;
+
+    // 高亮对应月份导航
+    var month = listItem.dataset.month;
+    if (month) {
+      monthNavEl.querySelectorAll('.month-btn').forEach(function(b) { b.classList.remove('active'); });
+      var monthBtn = monthNavEl.querySelector('.month-btn[data-month="' + month + '"]');
+      if (monthBtn) monthBtn.classList.add('active');
+    }
 
     // 移动端选择文章后收起侧栏
     if (window.innerWidth < 660) {
@@ -286,14 +271,6 @@
       for (var i = 0; i < items.length; i++) {
         var url = items[i].dataset.url;
         if (url === path) {
-          var group = items[i].closest('.month-group');
-          if (group) {
-            var postsDiv = group.querySelector('.month-posts');
-            var icon = group.querySelector('.month-toggle-icon');
-            if (postsDiv) postsDiv.style.display = '';
-            if (icon) icon.textContent = '▼';
-            group.classList.add('expanded');
-          }
           loadPost(url, items[i]);
           items[i].scrollIntoView({ block: 'center' });
           break;
@@ -423,11 +400,7 @@
     if (toggleBtn) toggleBtn.onclick = toggleSidebar;
 
     renderMonthNav(posts);
-    // 默认选择第一个月份
-    var firstMonth = monthNavEl.querySelector('.month-btn');
-    if (firstMonth) {
-      renderPostList(posts, firstMonth.dataset.month);
-    }
+    renderPostList(posts);
     loadInitialPost();
   }
 
