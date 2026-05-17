@@ -645,6 +645,7 @@ a {
     left: 0;
     bottom: 0;
     width: 48px;
+    min-width: 48px;
     z-index: 99;
     border-right: 1px solid $border;
     transition: width 0.2s ease;
@@ -667,8 +668,14 @@ a {
     display: none;
   }
 
+  #sidebar:not(.open) .sidebar-header {
+    border-bottom: none;
+    padding: 12px 0;
+  }
+
   #sidebar:not(.open) .sidebar-header-row {
     justify-content: center;
+    gap: 0;
   }
 
   #sidebar:not(.open) .sidebar-toggle {
