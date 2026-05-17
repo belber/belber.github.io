@@ -10,6 +10,8 @@ permalink: /diary/:year/:month/:day/:title/
 
 # 构建设置
 markdown: kramdown
+kramdown:
+  hard_wrap: true
 future: true
 timezone: Asia/Shanghai
 theme: null       # 不使用主题，完全自定义布局

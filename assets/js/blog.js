@@ -138,7 +138,17 @@
         html += '    <span class="post-item-date">' + dateStr + '</span>';
         html += '    <div class="post-item-text">';
         html += '      <div class="post-item-title">' + p.title + '</div>';
-        html += '      <div class="post-item-excerpt">' + p.excerpt + '</div>';
+        var excerptHtml = (p.excerpt || '')
+          .replace(/<br\s*\/?>/gi, '\n')
+          .replace(/<\/p>/gi, '\n')
+          .replace(/<[^>]+>/g, '')
+          .replace(/&nbsp;/g, ' ')
+          .replace(/&amp;/g, '&')
+          .trim();
+      if (excerptHtml.length > 80) {
+        excerptHtml = excerptHtml.substring(0, 80).replace(/\s\S*$/, '') + '…';
+      }
+      html += '      <div class="post-item-excerpt">' + excerptHtml.replace(/\n/g, '<br>') + '</div>';
         html += '    </div>';
         html += '  </div>';
         html += '</div>';
