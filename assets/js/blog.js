@@ -396,6 +396,52 @@
     if (e.key === 'Escape') closeLightbox();
   });
 
+  // === 主题切换 ===
+  function initThemeToggle() {
+    var btn = document.getElementById('theme-toggle');
+    var popover = document.getElementById('theme-popover');
+    if (!btn || !popover) return;
+
+    var themes = ['purple', 'blue', 'warmgray'];
+
+    function applyTheme(name) {
+      themes.forEach(function(t) { document.documentElement.classList.remove('theme-' + t); });
+      if (name !== 'warmgray') document.documentElement.classList.add('theme-' + name);
+      popover.querySelectorAll('.theme-dot').forEach(function(dot) {
+        dot.classList.toggle('active', dot.dataset.theme === name);
+      });
+      try { localStorage.setItem('theme', name); } catch(e) {}
+    }
+
+    function closePopover() { popover.style.display = 'none'; }
+
+    // 恢复保存的主题
+    var saved = 'warmgray';
+    try { saved = localStorage.getItem('theme') || 'warmgray'; } catch(e) {}
+    applyTheme(saved);
+
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      popover.style.display = popover.style.display === 'none' ? 'flex' : 'none';
+    });
+
+    popover.querySelectorAll('.theme-dot').forEach(function(dot) {
+      dot.addEventListener('click', function(e) {
+        e.stopPropagation();
+        applyTheme(dot.dataset.theme);
+        closePopover();
+      });
+    });
+
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.theme-picker')) closePopover();
+    });
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closePopover();
+    });
+  }
+
   // === 初始化 ===
   function init() {
     // 添加遮罩层
@@ -412,6 +458,7 @@
     renderMonthNav(posts);
     renderPostList(posts);
     loadInitialPost();
+    initThemeToggle();
   }
 
   // 窗口 resize 时清理跨断点状态残留

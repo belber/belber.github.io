@@ -8,7 +8,7 @@ layout: default
     <div class="sidebar-header">
       <div class="sidebar-header-row">
         <svg class="sidebar-logo" width="28" height="28" viewBox="0 0 80 80">
-          <rect x="4" y="4" width="72" height="72" rx="16" fill="#a594dd"/>
+          <rect x="4" y="4" width="72" height="72" rx="16" fill="var(--primary)"/>
           <text x="40" y="54" text-anchor="middle" font-size="36" font-weight="600" fill="#fff" font-family="serif">蜉</text>
         </svg>
         <h1 class="site-title"><a href="/">{{ site.title }}</a></h1>
@@ -27,7 +27,20 @@ layout: default
     </div>
 
     <div class="sidebar-footer">
-      <a href="/admin/" class="admin-gear" aria-label="管理">⚙</a>
+      <div class="theme-picker">
+        <button id="theme-toggle" class="theme-toggle" aria-label="切换主题" title="切换主题">◑</button>
+        <div id="theme-popover" class="theme-popover" style="display:none">
+          <button class="theme-dot theme-dot-warmgray active" data-theme="warmgray" title="暖灰"></button>
+          <button class="theme-dot theme-dot-blue" data-theme="blue" title="浅蓝"></button>
+          <button class="theme-dot theme-dot-purple" data-theme="purple" title="浅紫"></button>
+        </div>
+      </div>
+      <a href="/admin/" class="admin-gear" aria-label="管理">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </a>
     </div>
   </aside>
 
