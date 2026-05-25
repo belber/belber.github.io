@@ -4,6 +4,68 @@
   // === 数据 ===
   const posts = window.__POSTS_DATA__ || [];
 
+  // === Umami analytics ===
+  const UMAMI_API = 'https://api.umami.is/v1';
+  const UMAMI_WEBSITE_ID = 'a3836ca7-5a2a-4271-af29-1c189ac6a436';
+  const UMAMI_SHARE_TOKEN = 'm7NbQ2xygYbPg507';
+
+  async function umamiFetch(path) {
+    var url = UMAMI_API + path + (path.indexOf('?') === -1 ? '?cache=' : '&cache=') + Date.now();
+    var res = await fetch(url, {
+      headers: { 'x-umami-share-token': UMAMI_SHARE_TOKEN }
+    });
+    if (!res.ok) throw new Error('Umami API error: ' + res.status);
+    return res.json();
+  }
+
+  function thisMonthRange() {
+    var now = new Date();
+    var start = new Date(now.getFullYear(), now.getMonth(), 1);
+    return { startAt: start.getTime(), endAt: now.getTime() };
+  }
+
+  async function loadUmamiStats() {
+    var pageviewsEl = document.getElementById('stat-pageviews');
+    var visitorsEl = document.getElementById('stat-visitors');
+    var onlineEl = document.getElementById('stat-online');
+    var browserEl = document.getElementById('browser-dist');
+    if (!pageviewsEl) return;
+
+    try {
+      var range = thisMonthRange();
+      var [statsData, activeData, browserData] = await Promise.all([
+        umamiFetch('/websites/' + UMAMI_WEBSITE_ID + '/stats?startAt=' + range.startAt + '&endAt=' + range.endAt),
+        umamiFetch('/websites/' + UMAMI_WEBSITE_ID + '/active'),
+        umamiFetch('/websites/' + UMAMI_WEBSITE_ID + '/metrics?type=browser&startAt=' + range.startAt + '&endAt=' + range.endAt)
+      ]);
+
+      pageviewsEl.textContent = (statsData.pageviews && statsData.pageviews.value != null)
+        ? statsData.pageviews.value.toLocaleString() : '0';
+      visitorsEl.textContent = (statsData.visitors && statsData.visitors.value != null)
+        ? statsData.visitors.value.toLocaleString() : '0';
+      onlineEl.textContent = (activeData.visitors != null)
+        ? String(activeData.visitors) : '0';
+
+      if (browserData && browserData.length > 0) {
+        var total = browserData.reduce(function(sum, b) { return sum + b.y; }, 0);
+        var parts = browserData
+          .sort(function(a, b) { return b.y - a.y; })
+          .slice(0, 4)
+          .map(function(b) {
+            var pct = total > 0 ? Math.round(b.y / total * 100) : 0;
+            return b.x + ' ' + pct + '%';
+          });
+        browserEl.textContent = parts.join(' · ');
+        browserEl.style.display = 'block';
+      }
+    } catch (e) {
+      pageviewsEl.textContent = '—';
+      visitorsEl.textContent = '—';
+      onlineEl.textContent = '—';
+      if (browserEl) browserEl.style.display = 'none';
+    }
+  }
+
   // === 工具函数 ===
   function groupByMonth(posts) {
     var groups = {};
@@ -458,6 +520,7 @@
     renderMonthNav(posts);
     renderPostList(posts);
     loadInitialPost();
+    loadUmamiStats();
     initThemeToggle();
   }
 

@@ -549,6 +549,13 @@ a {
   }
 }
 
+.browser-dist {
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--text-muted);
+  letter-spacing: 0.3px;
+}
+
 // === 文章内容样式 ===
 .post-display {
   max-width: 680px;
