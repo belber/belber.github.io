@@ -6,10 +6,17 @@
 
   // === Umami analytics ===
   var UMAMI_API = 'https://api.umami.is/v1';
-  var UMAMI_SHARE_TOKEN = 'm7NbQ2xygYbPg507';
+  var UMAMI_WEBSITE_ID = 'a3836ca7-5a2a-4271-af29-1c189ac6a436';
+  var UMAMI_API_KEY = 'api_cQTkh4ju537CpGJNjAYKKEOwi6xA0CGy';
 
-  function umamiShareURL(path) {
-    return UMAMI_API + '/share/' + UMAMI_SHARE_TOKEN + path;
+  function umamiFetch(path) {
+    var url = UMAMI_API + path + (path.indexOf('?') === -1 ? '?_=' : '&_=') + Date.now();
+    return fetch(url, {
+      headers: { 'Authorization': 'Bearer ' + UMAMI_API_KEY }
+    }).then(function(r) {
+      if (!r.ok) throw new Error('Umami ' + r.status);
+      return r.json();
+    });
   }
 
   function thisMonthRange() {
@@ -26,16 +33,12 @@
     if (!pageviewsEl) return;
 
     var range = thisMonthRange();
-    var cacheBust = '?cache=' + Date.now();
 
     // 分别请求，互不阻塞
-    fetch(umamiShareURL('/stats?startAt=' + range.startAt + '&endAt=' + range.endAt) + cacheBust)
-      .then(function(r) { if (!r.ok) throw new Error('stats: ' + r.status); return r.json(); })
+    umamiFetch('/websites/' + UMAMI_WEBSITE_ID + '/stats?startAt=' + range.startAt + '&endAt=' + range.endAt)
       .then(function(data) {
-        if (data.pageviews && data.pageviews.value != null)
-          pageviewsEl.textContent = data.pageviews.value.toLocaleString();
-        if (data.visitors && data.visitors.value != null)
-          visitorsEl.textContent = data.visitors.value.toLocaleString();
+        if (data.pageviews != null) pageviewsEl.textContent = Number(data.pageviews).toLocaleString();
+        if (data.visitors != null) visitorsEl.textContent = Number(data.visitors).toLocaleString();
       })
       .catch(function(e) {
         pageviewsEl.textContent = '—';
@@ -43,8 +46,7 @@
         console.warn('[Umami] stats error:', e);
       });
 
-    fetch(umamiShareURL('/active') + cacheBust)
-      .then(function(r) { if (!r.ok) throw new Error('active: ' + r.status); return r.json(); })
+    umamiFetch('/websites/' + UMAMI_WEBSITE_ID + '/active')
       .then(function(data) {
         if (data.visitors != null) onlineEl.textContent = String(data.visitors);
       })
@@ -53,8 +55,7 @@
         console.warn('[Umami] active error:', e);
       });
 
-    fetch(umamiShareURL('/metrics?type=browser&startAt=' + range.startAt + '&endAt=' + range.endAt) + cacheBust)
-      .then(function(r) { if (!r.ok) throw new Error('browser: ' + r.status); return r.json(); })
+    umamiFetch('/websites/' + UMAMI_WEBSITE_ID + '/metrics?type=browser&startAt=' + range.startAt + '&endAt=' + range.endAt)
       .then(function(data) {
         if (data && data.length > 0) {
           var total = data.reduce(function(sum, b) { return sum + b.y; }, 0);
