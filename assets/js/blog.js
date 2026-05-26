@@ -5,17 +5,11 @@
   const posts = window.__POSTS_DATA__ || [];
 
   // === Umami analytics ===
-  const UMAMI_API = 'https://api.umami.is/v1';
-  const UMAMI_WEBSITE_ID = 'a3836ca7-5a2a-4271-af29-1c189ac6a436';
-  const UMAMI_SHARE_TOKEN = 'm7NbQ2xygYbPg507';
+  var UMAMI_API = 'https://api.umami.is/v1';
+  var UMAMI_SHARE_TOKEN = 'm7NbQ2xygYbPg507';
 
-  async function umamiFetch(path) {
-    var url = UMAMI_API + path + (path.indexOf('?') === -1 ? '?cache=' : '&cache=') + Date.now();
-    var res = await fetch(url, {
-      headers: { 'x-umami-share-token': UMAMI_SHARE_TOKEN }
-    });
-    if (!res.ok) throw new Error('Umami API error: ' + res.status);
-    return res.json();
+  function umamiShareURL(path) {
+    return UMAMI_API + '/share/' + UMAMI_SHARE_TOKEN + path;
   }
 
   function thisMonthRange() {
@@ -24,46 +18,61 @@
     return { startAt: start.getTime(), endAt: now.getTime() };
   }
 
-  async function loadUmamiStats() {
+  function loadUmamiStats() {
     var pageviewsEl = document.getElementById('stat-pageviews');
     var visitorsEl = document.getElementById('stat-visitors');
     var onlineEl = document.getElementById('stat-online');
     var browserEl = document.getElementById('browser-dist');
     if (!pageviewsEl) return;
 
-    try {
-      var range = thisMonthRange();
-      var [statsData, activeData, browserData] = await Promise.all([
-        umamiFetch('/websites/' + UMAMI_WEBSITE_ID + '/stats?startAt=' + range.startAt + '&endAt=' + range.endAt),
-        umamiFetch('/websites/' + UMAMI_WEBSITE_ID + '/active'),
-        umamiFetch('/websites/' + UMAMI_WEBSITE_ID + '/metrics?type=browser&startAt=' + range.startAt + '&endAt=' + range.endAt)
-      ]);
+    var range = thisMonthRange();
+    var cacheBust = '?cache=' + Date.now();
 
-      pageviewsEl.textContent = (statsData.pageviews && statsData.pageviews.value != null)
-        ? statsData.pageviews.value.toLocaleString() : '0';
-      visitorsEl.textContent = (statsData.visitors && statsData.visitors.value != null)
-        ? statsData.visitors.value.toLocaleString() : '0';
-      onlineEl.textContent = (activeData.visitors != null)
-        ? String(activeData.visitors) : '0';
+    // 分别请求，互不阻塞
+    fetch(umamiShareURL('/stats?startAt=' + range.startAt + '&endAt=' + range.endAt) + cacheBust)
+      .then(function(r) { if (!r.ok) throw new Error('stats: ' + r.status); return r.json(); })
+      .then(function(data) {
+        if (data.pageviews && data.pageviews.value != null)
+          pageviewsEl.textContent = data.pageviews.value.toLocaleString();
+        if (data.visitors && data.visitors.value != null)
+          visitorsEl.textContent = data.visitors.value.toLocaleString();
+      })
+      .catch(function(e) {
+        pageviewsEl.textContent = '—';
+        visitorsEl.textContent = '—';
+        console.warn('[Umami] stats error:', e);
+      });
 
-      if (browserData && browserData.length > 0) {
-        var total = browserData.reduce(function(sum, b) { return sum + b.y; }, 0);
-        var parts = browserData
-          .sort(function(a, b) { return b.y - a.y; })
-          .slice(0, 4)
-          .map(function(b) {
-            var pct = total > 0 ? Math.round(b.y / total * 100) : 0;
-            return b.x + ' ' + pct + '%';
-          });
-        browserEl.textContent = parts.join(' · ');
-        browserEl.style.display = 'block';
-      }
-    } catch (e) {
-      pageviewsEl.textContent = '—';
-      visitorsEl.textContent = '—';
-      onlineEl.textContent = '—';
-      if (browserEl) browserEl.style.display = 'none';
-    }
+    fetch(umamiShareURL('/active') + cacheBust)
+      .then(function(r) { if (!r.ok) throw new Error('active: ' + r.status); return r.json(); })
+      .then(function(data) {
+        if (data.visitors != null) onlineEl.textContent = String(data.visitors);
+      })
+      .catch(function(e) {
+        onlineEl.textContent = '—';
+        console.warn('[Umami] active error:', e);
+      });
+
+    fetch(umamiShareURL('/metrics?type=browser&startAt=' + range.startAt + '&endAt=' + range.endAt) + cacheBust)
+      .then(function(r) { if (!r.ok) throw new Error('browser: ' + r.status); return r.json(); })
+      .then(function(data) {
+        if (data && data.length > 0) {
+          var total = data.reduce(function(sum, b) { return sum + b.y; }, 0);
+          var parts = data
+            .sort(function(a, b) { return b.y - a.y; })
+            .slice(0, 4)
+            .map(function(b) {
+              var pct = total > 0 ? Math.round(b.y / total * 100) : 0;
+              return b.x + ' ' + pct + '%';
+            });
+          browserEl.textContent = parts.join(' · ');
+          browserEl.style.display = 'block';
+        }
+      })
+      .catch(function(e) {
+        browserEl.style.display = 'none';
+        console.warn('[Umami] browser error:', e);
+      });
   }
 
   // === 工具函数 ===
