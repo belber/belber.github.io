@@ -476,12 +476,25 @@
 
     var themes = ['purple', 'blue', 'warmgray'];
 
+    function updateFavicon() {
+      var link = document.querySelector('link[rel="icon"]');
+      if (!link) return;
+      var primary = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
+      var color = primary.replace('#', '');
+      if (!color) { color = 'a0908e'; }
+      var svg = '<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 80 80\'>' +
+        '<rect x=\'4\' y=\'4\' width=\'72\' height=\'72\' rx=\'16\' fill=\'%23' + color + '\'/>' +
+        '<text x=\'40\' y=\'52\' text-anchor=\'middle\' font-size=\'36\' font-weight=\'600\' fill=\'white\' font-family=\'serif\'>蜉</text></svg>';
+      link.href = 'data:image/svg+xml,' + svg;
+    }
+
     function applyTheme(name) {
       themes.forEach(function(t) { document.documentElement.classList.remove('theme-' + t); });
       if (name !== 'warmgray') document.documentElement.classList.add('theme-' + name);
       popover.querySelectorAll('.theme-dot').forEach(function(dot) {
         dot.classList.toggle('active', dot.dataset.theme === name);
       });
+      updateFavicon();
       try { localStorage.setItem('theme', name); } catch(e) {}
     }
 
