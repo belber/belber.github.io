@@ -1,17 +1,19 @@
 ---
 layout: default
 ---
-<article class="post-article">
-  <header class="post-article-header">
-    <h1 class="post-article-title">{{ page.title }}</h1>
-    <div class="post-article-meta">
-      <time class="post-article-date" datetime="{{ page.date | date_to_xmlschema }}">
-        {{ page.date | date: "%B %-d, %Y %H:%M" }}
-      </time>
-      <span class="post-article-eta"></span>
+<div class="post-page-wrapper">
+  <article class="post-article">
+    <header class="post-article-header">
+      <h1 class="post-article-title">{{ page.title }}</h1>
+      <div class="post-article-meta">
+        <time class="post-article-date" datetime="{{ page.date | date_to_xmlschema }}">
+          {{ page.date | date: "%B %-d, %Y %H:%M" }}
+        </time>
+        <span class="post-article-eta"></span>
+      </div>
+    </header>
+    <div class="post-article-content">
+      {{ content }}
     </div>
-  </header>
-  <div class="post-article-content">
-    {{ content }}
-  </div>
-</article>
+  </article>
+</div>
